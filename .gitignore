@@ -57,3 +57,6 @@ package-lock.json
 /playwright/.cache/
 /playwright/.auth/
 tests/playwright-auth-sessions/
+
+.vercel
+.env*.local
