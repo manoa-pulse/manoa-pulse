@@ -3,6 +3,11 @@ body {
   --bs-light-rgb: 236, 236, 236;
   box-sizing: border-box;
   height: 100%;
+  font-family:
+    "Helvetica Neue",
+    Helvetica,
+    Arial,
+    sans-serif;
   padding: 0;
   margin: 0;
 }
