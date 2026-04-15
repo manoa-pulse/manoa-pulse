@@ -1,4 +1,5 @@
-import { Button, Col, Container, Row } from 'react-bootstrap';
+import Link from 'next/link';
+import { Col, Container, Row } from 'react-bootstrap';
 
 /** The Home page. */
 const Home = () => (
@@ -34,20 +35,19 @@ const Home = () => (
           </p>
 
           <div className="d-flex gap-3 mt-5">
-            <Button
-              size="lg"
-              className="px-5 py-3 rounded-4 fw-semibold bg-success border-success"
+            <Link
+              href="/locations"
+              className="btn btn-success btn-lg px-5 py-3 rounded-4 fw-semibold"
+            >
+              View Locations
+            </Link>
+
+            <Link
+              href="/pulse-feed"
+              className="btn btn-light btn-lg px-5 py-3 rounded-4 fw-semibold shadow-sm"
             >
               View Live Pulse
-            </Button>
-
-            <Button
-              size="lg"
-              variant="light"
-              className="px-5 py-3 rounded-4 fw-semibold shadow-sm"
-            >
-              Explore Map
-            </Button>
+            </Link>
           </div>
         </Col>
 

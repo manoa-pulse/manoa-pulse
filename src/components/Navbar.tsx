@@ -46,6 +46,14 @@ const NavBar: React.FC = () => {
             </Nav.Link>
 
             <Nav.Link
+              href="/locations"
+              active={pathName === '/locations'}
+              className="text-secondary"
+            >
+              Locations
+            </Nav.Link>
+
+            <Nav.Link
               href="/map"
               active={pathName === '/map'}
               className="text-secondary"
