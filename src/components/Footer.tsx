@@ -5,7 +5,7 @@ const Footer = () => (
   <footer className="mt-auto py-3 bg-light border-top">
     <Container>
       <Col className="text-center text-muted">
-        © 2026 Manoa Pulse. Helping UH Mānoa students find the best study spots in real time.
+        © 2026 Manoa Pulse.
       </Col>
     </Container>
   </footer>

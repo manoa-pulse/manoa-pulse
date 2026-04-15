@@ -20,7 +20,9 @@ export default function RootLayout({
       <body className="wrapper">
         <Providers>
           <NavBar />
-          {children}
+          <div className="page-content">
+            {children}
+          </div>
           <Footer />
         </Providers>
       </body>
