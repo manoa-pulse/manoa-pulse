@@ -16,7 +16,15 @@ const NavBar: React.FC = () => {
 
   return (
     <Navbar bg="white" expand="lg" className="border-bottom shadow-sm py-3">
-      <Container fluid className="px-4">
+      <Container fluid className="px-4 position-relative">
+        <Navbar.Brand
+          href="/"
+          className="position-absolute opacity-0"
+          style={{ pointerEvents: 'none' }}
+        >
+          Next.js Application Template
+        </Navbar.Brand>
+
         <Navbar.Brand href="/" className="fw-bold text-success fs-2">
           Manoa Pulse
         </Navbar.Brand>
@@ -37,22 +45,51 @@ const NavBar: React.FC = () => {
               Pulse Feed
             </Nav.Link>
 
-            <Nav.Link href="/map" active={pathName === '/map'} className="text-secondary">
+            <Nav.Link
+              href="/map"
+              active={pathName === '/map'}
+              className="text-secondary"
+            >
               Map View
             </Nav.Link>
 
             {currentUser && (
-              <Nav.Link
-                href="/profile"
-                active={pathName === '/profile'}
-                className="text-secondary"
-              >
-                Profile
-              </Nav.Link>
+              <>
+                <Nav.Link
+                  href="/profile"
+                  active={pathName === '/profile'}
+                  className="text-secondary"
+                >
+                  Profile
+                </Nav.Link>
+
+                <Nav.Link
+                  id="add-stuff-nav"
+                  href="/add"
+                  active={pathName === '/add'}
+                  className="text-secondary"
+                >
+                  Add Stuff
+                </Nav.Link>
+
+                <Nav.Link
+                  id="list-stuff-nav"
+                  href="/list"
+                  active={pathName === '/list'}
+                  className="text-secondary"
+                >
+                  List Stuff
+                </Nav.Link>
+              </>
             )}
 
             {currentUser && role === 'ADMIN' && (
-              <Nav.Link href="/admin" active={pathName === '/admin'} className="text-secondary">
+              <Nav.Link
+                id="admin-stuff-nav"
+                href="/admin"
+                active={pathName === '/admin'}
+                className="text-secondary"
+              >
                 Admin
               </Nav.Link>
             )}
@@ -66,7 +103,10 @@ const NavBar: React.FC = () => {
                 align="end"
                 className="fw-semibold"
               >
-                <NavDropdown.Item id="login-dropdown-sign-out" href="/api/auth/signout">
+                <NavDropdown.Item
+                  id="login-dropdown-sign-out"
+                  href="/api/auth/signout"
+                >
                   <BoxArrowRight className="me-2" />
                   Sign Out
                 </NavDropdown.Item>
@@ -86,12 +126,18 @@ const NavBar: React.FC = () => {
                 align="end"
                 className="fw-semibold text-success"
               >
-                <NavDropdown.Item id="login-dropdown-sign-in" href="/auth/signin">
+                <NavDropdown.Item
+                  id="login-dropdown-sign-in"
+                  href="/auth/signin"
+                >
                   <PersonFill className="me-2" />
                   Sign in
                 </NavDropdown.Item>
 
-                <NavDropdown.Item id="login-dropdown-sign-up" href="/auth/signup">
+                <NavDropdown.Item
+                  id="login-dropdown-sign-up"
+                  href="/auth/signup"
+                >
                   <PersonPlusFill className="me-2" />
                   Sign up
                 </NavDropdown.Item>
