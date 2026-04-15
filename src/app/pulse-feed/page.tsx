@@ -1,3 +1,7 @@
+'use client';
+
+import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 import {
   GeoAltFill,
@@ -7,7 +11,19 @@ import {
   Wifi,
 } from 'react-bootstrap-icons';
 
-const spots = [
+type Spot = {
+  name: string;
+  category: string;
+  occupancy: number;
+  occupants: number;
+  updated: string;
+  level: string;
+  borderColor: string;
+  badgeBg: string;
+  badgeColor: string;
+};
+
+const spots: Spot[] = [
   {
     name: 'Hamilton Library',
     category: 'LIBRARY',
@@ -76,179 +92,220 @@ const spots = [
   },
 ];
 
-const PulseFeed = () => (
-  <main className="bg-light min-vh-100 py-5">
-    <Container fluid className="px-5">
-      <Row>
-        <Col lg={3} className="mb-4">
-          <div
-            className="bg-white shadow-sm h-100 d-flex flex-column justify-content-between p-4"
-            style={{ borderRadius: '2rem', minHeight: '850px' }}
-          >
-            <div>
-              <h2 className="fw-bold text-success mb-1">Warrior Dashboard</h2>
-              <p className="text-secondary fs-5">UH Mānoa Campus</p>
+const PulseFeed = () => {
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
 
-              <div className="d-flex flex-column gap-3 mt-5">
-                <a
-                  href="/"
-                  className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
-                >
-                  <HouseFill />
-                  Home
-                </a>
+  const filteredSpots = useMemo(() => {
+    return spots.filter((spot) => {
+      const matchesCategory =
+        selectedCategory === 'ALL' || spot.category === selectedCategory;
 
-                <a
-                  href="/pulse-feed"
-                  className="d-flex align-items-center gap-3 text-decoration-none text-success fw-semibold fs-5 px-3 py-3"
-                  style={{
-                    backgroundColor: '#dff8e7',
-                    borderRadius: '1rem',
-                  }}
-                >
-                  <Wifi />
-                  Pulse Feed
-                </a>
+      const matchesSearch = spot.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-                <a
-                  href="/map"
-                  className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
-                >
-                  <GeoAltFill />
-                  Map View
-                </a>
+      return matchesCategory && matchesSearch;
+    });
+  }, [selectedCategory, searchTerm]);
 
-                <a
-                  href="/profile"
-                  className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
-                >
-                  <PersonFill />
-                  Profile
-                </a>
-              </div>
-            </div>
+  const categoryButton = (
+    label: string,
+    value: string,
+  ) => (
+    <Button
+      key={value}
+      onClick={() => setSelectedCategory(value)}
+      className="px-4 py-3 rounded-4 fw-semibold border-0"
+      variant={selectedCategory === value ? undefined : 'light'}
+      style={
+        selectedCategory === value
+          ? { backgroundColor: '#0b5d3b' }
+          : {}
+      }
+    >
+      {label}
+    </Button>
+  );
 
+  return (
+    <main className="bg-light py-5">
+      <Container fluid className="px-5">
+        <Row>
+          <Col lg={3} className="mb-4">
             <div
-              className="text-white p-4"
-              style={{
-                backgroundColor: '#0b5d3b',
-                borderRadius: '1.5rem',
-              }}
+              className="bg-white shadow-sm h-100 d-flex flex-column justify-content-between p-4"
+              style={{ borderRadius: '2rem' }}
             >
-              <p className="small fw-semibold text-uppercase mb-2">Live Status</p>
-              <h5 className="fw-semibold mb-4">● Campus is Active</h5>
+              <div>
+                <h2 className="fw-bold text-success mb-1">Warrior Dashboard</h2>
+                <p className="text-secondary fs-5">UH Mānoa Campus</p>
 
-              <Button
-                variant="light"
-                className="w-100 rounded-pill fw-semibold py-2"
-              >
-                View Live Pulse
-              </Button>
-            </div>
-          </div>
-        </Col>
+                <div className="d-flex flex-column gap-3 mt-5">
+                  <Link
+                    href="/"
+                    className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
+                  >
+                    <HouseFill />
+                    Home
+                  </Link>
 
-        <Col lg={9}>
-          <div className="mb-5">
-            <h1 className="fw-bold text-success display-4">The Pulse Feed</h1>
-            <p className="text-secondary fs-4 mt-3">
-              Real-time occupancy data for campus facilities. Plan your study
-              sessions and dining breaks with precision.
-            </p>
-          </div>
+                  <Link
+                    href="/pulse-feed"
+                    className="d-flex align-items-center gap-3 text-decoration-none text-success fw-semibold fs-5 px-3 py-3"
+                    style={{
+                      backgroundColor: '#dff8e7',
+                      borderRadius: '1rem',
+                    }}
+                  >
+                    <Wifi />
+                    Pulse Feed
+                  </Link>
 
-          <Row className="align-items-center mb-5 g-3">
-            <Col lg={5}>
+                  <Link
+                    href="/map"
+                    className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
+                  >
+                    <GeoAltFill />
+                    Map View
+                  </Link>
+
+                  <Link
+                    href="/profile"
+                    className="d-flex align-items-center gap-3 text-decoration-none text-dark fs-5"
+                  >
+                    <PersonFill />
+                    Profile
+                  </Link>
+                </div>
+              </div>
+
               <div
-                className="bg-white d-flex align-items-center px-4 py-3 shadow-sm"
-                style={{ borderRadius: '1.25rem' }}
+                className="text-white p-4"
+                style={{
+                  backgroundColor: '#0b5d3b',
+                  borderRadius: '1.5rem',
+                }}
               >
-                <Search className="text-secondary me-3 fs-4" />
-                <Form.Control
-                  type="text"
-                  placeholder="Search buildings or spots..."
-                  className="border-0 shadow-none fs-5"
-                />
-              </div>
-            </Col>
+                <p className="small fw-semibold text-uppercase mb-2">Live Status</p>
+                <h5 className="fw-semibold mb-4">● Campus is Active</h5>
 
-            <Col lg={7}>
-              <div className="d-flex gap-3 flex-wrap">
                 <Button
-                  className="px-4 py-3 rounded-4 fw-semibold border-0"
-                  style={{ backgroundColor: '#0b5d3b' }}
+                  variant="light"
+                  className="w-100 rounded-pill fw-semibold py-2"
                 >
-                  All Spots
-                </Button>
-
-                <Button variant="light" className="px-4 py-3 rounded-4 fw-semibold">
-                  Libraries
-                </Button>
-
-                <Button variant="light" className="px-4 py-3 rounded-4 fw-semibold">
-                  Dining
-                </Button>
-
-                <Button variant="light" className="px-4 py-3 rounded-4 fw-semibold">
-                  Study Lounges
+                  View Live Pulse
                 </Button>
               </div>
-            </Col>
-          </Row>
+            </div>
+          </Col>
 
-          <Row className="g-4">
-            {spots.map((spot) => (
-              <Col md={6} xl={4} key={spot.name}>
-                <Card
-                  className="border-0 shadow-sm h-100"
-                  style={{
-                    borderRadius: '1.75rem',
-                    borderLeft: `6px solid ${spot.borderColor}`,
-                  }}
+          <Col lg={9}>
+            <div className="mb-5">
+              <h1 className="fw-bold text-success display-4">The Pulse Feed</h1>
+              <p className="text-secondary fs-4 mt-3">
+                Real-time occupancy data for campus facilities. Plan your study
+                sessions and dining breaks with precision.
+              </p>
+            </div>
+
+            <Row className="align-items-center mb-5 g-3">
+              <Col lg={5}>
+                <div
+                  className="bg-white d-flex align-items-center px-4 py-3 shadow-sm"
+                  style={{ borderRadius: '1.25rem' }}
                 >
-                  <Card.Body className="p-4">
-                    <div className="d-flex justify-content-between align-items-start mb-4">
-                      <div>
-                        <p className="small text-uppercase text-muted fw-semibold mb-2">
-                          {spot.category}
-                        </p>
-                        <h3 className="fw-semibold">{spot.name}</h3>
-                      </div>
-
-                      <span
-                        className="px-3 py-2 rounded-pill fw-semibold small"
-                        style={{
-                          backgroundColor: spot.badgeBg,
-                          color: spot.badgeColor,
-                        }}
-                      >
-                        {spot.level}
-                      </span>
-                    </div>
-
-                    <div className="mb-4">
-                      <span
-                        className="fw-bold text-success"
-                        style={{ fontSize: '4rem' }}
-                      >
-                        {String(spot.occupancy).padStart(2, '0')}%
-                      </span>
-                      <span className="text-muted fw-semibold ms-2">OCCUPANCY</span>
-                    </div>
-
-                    <div className="d-flex justify-content-between text-secondary">
-                      <small>{spot.occupants} Occupants</small>
-                      <small>Updated {spot.updated}</small>
-                    </div>
-                  </Card.Body>
-                </Card>
+                  <Search className="text-secondary me-3 fs-4" />
+                  <Form.Control
+                    type="text"
+                    placeholder="Search buildings or spots..."
+                    className="border-0 shadow-none fs-5"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
               </Col>
-            ))}
-          </Row>
-        </Col>
-      </Row>
-    </Container>
-  </main>
-);
+
+              <Col lg={7}>
+                <div className="d-flex gap-3 flex-wrap">
+                  {categoryButton('All Spots', 'ALL')}
+                  {categoryButton('Libraries', 'LIBRARY')}
+                  {categoryButton('Dining', 'DINING')}
+                  {categoryButton('Study Lounges', 'STUDY')}
+                  {categoryButton('Fitness', 'FITNESS')}
+                </div>
+              </Col>
+            </Row>
+
+            <Row className="g-4">
+              {filteredSpots.length > 0 ? (
+                filteredSpots.map((spot) => (
+                  <Col md={6} xl={4} key={spot.name}>
+                    <Card
+                      className="border-0 shadow-sm h-100"
+                      style={{
+                        borderRadius: '1.75rem',
+                        borderLeft: `6px solid ${spot.borderColor}`,
+                      }}
+                    >
+                      <div className="p-4">
+                        <div className="d-flex justify-content-between align-items-start mb-4">
+                          <div>
+                            <p className="small text-uppercase text-muted fw-semibold mb-2">
+                              {spot.category}
+                            </p>
+                            <h3 className="fw-semibold">{spot.name}</h3>
+                          </div>
+
+                          <span
+                            className="px-3 py-2 rounded-pill fw-semibold small"
+                            style={{
+                              backgroundColor: spot.badgeBg,
+                              color: spot.badgeColor,
+                            }}
+                          >
+                            {spot.level}
+                          </span>
+                        </div>
+
+                        <div className="mb-4">
+                          <span
+                            className="fw-bold text-success"
+                            style={{ fontSize: '4rem' }}
+                          >
+                            {String(spot.occupancy).padStart(2, '0')}%
+                          </span>
+                          <span className="text-muted fw-semibold ms-2">
+                            OCCUPANCY
+                          </span>
+                        </div>
+
+                        <div className="d-flex justify-content-between text-secondary">
+                          <small>{spot.occupants} Occupants</small>
+                          <small>Updated {spot.updated}</small>
+                        </div>
+                      </div>
+                    </Card>
+                  </Col>
+                ))
+              ) : (
+                <Col>
+                  <div
+                    className="bg-white text-center py-5 shadow-sm"
+                    style={{ borderRadius: '2rem' }}
+                  >
+                    <h4 className="text-secondary">
+                      No spots found for your search.
+                    </h4>
+                  </div>
+                </Col>
+              )}
+            </Row>
+          </Col>
+        </Row>
+      </Container>
+    </main>
+  );
+};
 
 export default PulseFeed;
