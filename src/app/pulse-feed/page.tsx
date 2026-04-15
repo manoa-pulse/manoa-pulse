@@ -21,6 +21,7 @@ type Spot = {
   borderColor: string;
   badgeBg: string;
   badgeColor: string;
+  href?: string;
 };
 
 const spots: Spot[] = [
@@ -34,6 +35,7 @@ const spots: Spot[] = [
     borderColor: '#8ce9a9',
     badgeBg: '#dff8e7',
     badgeColor: '#198754',
+    href: '/locations/hamilton-library',
   },
   {
     name: 'Warrior Recreation',
@@ -109,20 +111,13 @@ const PulseFeed = () => {
     });
   }, [selectedCategory, searchTerm]);
 
-  const categoryButton = (
-    label: string,
-    value: string,
-  ) => (
+  const categoryButton = (label: string, value: string) => (
     <Button
       key={value}
       onClick={() => setSelectedCategory(value)}
       className="px-4 py-3 rounded-4 fw-semibold border-0"
       variant={selectedCategory === value ? undefined : 'light'}
-      style={
-        selectedCategory === value
-          ? { backgroundColor: '#0b5d3b' }
-          : {}
-      }
+      style={selectedCategory === value ? { backgroundColor: '#0b5d3b' } : {}}
     >
       {label}
     </Button>
@@ -239,13 +234,15 @@ const PulseFeed = () => {
 
             <Row className="g-4">
               {filteredSpots.length > 0 ? (
-                filteredSpots.map((spot) => (
-                  <Col md={6} xl={4} key={spot.name}>
+                filteredSpots.map((spot) => {
+                  const cardContent = (
                     <Card
                       className="border-0 shadow-sm h-100"
                       style={{
                         borderRadius: '1.75rem',
                         borderLeft: `6px solid ${spot.borderColor}`,
+                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        cursor: spot.href ? 'pointer' : 'default',
                       }}
                     >
                       <div className="p-4">
@@ -286,8 +283,23 @@ const PulseFeed = () => {
                         </div>
                       </div>
                     </Card>
-                  </Col>
-                ))
+                  );
+
+                  return (
+                    <Col md={6} xl={4} key={spot.name}>
+                      {spot.href ? (
+                        <Link
+                          href={spot.href}
+                          className="text-decoration-none text-dark d-block h-100"
+                        >
+                          {cardContent}
+                        </Link>
+                      ) : (
+                        cardContent
+                      )}
+                    </Col>
+                  );
+                })
               ) : (
                 <Col>
                   <div
