@@ -21,17 +21,16 @@ async function main() {
     // console.log(`  Created user: ${user.email} with role: ${user.role}`);
   });
   for (const data of config.defaultData) {
-    const condition = data.condition as Condition || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
+    const location = data.location as unknown as Location;
+    console.log(`  Adding entry: ${JSON.stringify(data)}`);
      
     await prisma.stuff.upsert({
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
       create: {
-        name: data.name,
-        quantity: data.quantity,
-        owner: data.owner,
-        condition,
+        location,
+        busyLevel: data.busyLevel,
+        comment: data.comment,
       },
     });
   }

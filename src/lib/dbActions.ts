@@ -7,6 +7,47 @@ import { redirect } from 'next/navigation';
 import { prisma } from './prisma';
 
 /**
+ * Adds an entry into the database.
+ * @param entry, an object with the following properties: location, busyLevel, comment.
+ */
+export async function submitUpdate(entry: { location: string; busyLevel: number; comment: string; }) {
+  // console.log(`addStuff data: ${JSON.stringify(stuff, null, 2)}`);
+  let location: string = 'Keller';
+  switch (entry.location) {
+    case 'Art':
+      location = 'Art';
+      break;
+    case 'Kuykendall':
+      location = 'Kuykendall';
+      break;
+    case 'Bilger':
+      location = 'Bilger';
+      break;
+    case 'CampusCenter':
+      location = 'CampusCenter';
+      break;
+    case 'Moore':
+      location = 'Moore';
+      break;
+    case 'ParadisePalms':
+      location = 'ParadisePalms';
+      break;
+    case 'POST':
+      location = 'POST';
+      break;
+  }
+  await prisma.entry.create({
+    data: {
+      location,
+      busyLevel: entry.busyLevel,
+      comment: entry.comment
+    },
+  });
+  // After adding, redirect to the list page
+  redirect('/list');
+}
+
+/**
  * Adds a new stuff to the database.
  * @param stuff, an object with the following properties: name, quantity, owner, condition.
  */
@@ -33,8 +74,7 @@ export async function addStuff(stuff: { name: string; quantity: number; owner: s
 }
 
 /**
- * Edits an existing stuff in the database.
- * @param stuff, an object with the following properties: id, name, quantity, owner, condition.
+ * Edits an existing stuff in the database. * @param stuff, an object with the following properties: id, name, quantity, owner, condition.
  */
 export async function editStuff(stuff: Stuff) {
   // console.log(`editStuff data: ${JSON.stringify(stuff, null, 2)}`);

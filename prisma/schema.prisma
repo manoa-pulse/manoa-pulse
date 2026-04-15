@@ -38,3 +38,21 @@ model Stuff {
   condition Condition @default(good)
   owner     String
 }
+
+enum Location {
+  Keller
+  Art
+  Kuykendall
+  Bilger
+  CampusCenter
+  Moore
+  ParadisePalms
+  POST
+}
+
+model Entry {
+  id        Int       @id @default(autoincrement())
+  location  Location  @default(Keller)
+  busyLevel Int       @default(0)
+  comment   String    @default("")
+}

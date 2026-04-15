@@ -1,8 +1,7 @@
-import { PrismaClient, Role, Condition } from '@prisma/client';
+import { prisma } from './lib/prisma';
+import { Role, Condition } from '@prisma/client';
 import { hash } from 'bcrypt';
 import * as config from '../config/settings.development.json';
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding the database');
@@ -12,9 +11,7 @@ async function main() {
     console.log(`  Creating user: ${account.email} with role: ${role}`);
     await prisma.user.upsert({
       where: { email: account.email },
-      update: {
-        password,
-      },
+      update: {},
       create: {
         email: account.email,
         password,
@@ -24,16 +21,16 @@ async function main() {
     // console.log(`  Created user: ${user.email} with role: ${user.role}`);
   });
   for (const data of config.defaultData) {
-    const condition = data.condition as Condition || Condition.good;
-    console.log(`  Adding stuff: ${JSON.stringify(data)}`);
+    const location = data.location as unknown as Location;
+    console.log(`  Adding entry: ${JSON.stringify(data)}`);
+     
     await prisma.stuff.upsert({
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
       create: {
-        name: data.name,
-        quantity: data.quantity,
-        owner: data.owner,
-        condition,
+        location,
+        busyLevel: data.busyLevel,
+        comment: data.comment,
       },
     });
   }
