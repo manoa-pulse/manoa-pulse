@@ -1,20 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-}
-
-enum Role {
-  USER
-  ADMIN
 }
 
 model User {
@@ -24,19 +13,31 @@ model User {
   role     Role   @default(USER)
 }
 
-enum Condition {
-  excellent
-  good
-  fair
-  poor
-}
-
 model Stuff {
   id        Int       @id @default(autoincrement())
   name      String
   quantity  Int
   condition Condition @default(good)
   owner     String
+}
+
+model Entry {
+  id        Int      @id @default(autoincrement())
+  location  Location @default(Keller)
+  busyLevel Int      @default(0)
+  comment   String   @default("")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Condition {
+  excellent
+  good
+  fair
+  poor
 }
 
 enum Location {
@@ -48,11 +49,4 @@ enum Location {
   Moore
   ParadisePalms
   POST
-}
-
-model Entry {
-  id        Int       @id @default(autoincrement())
-  location  Location  @default(Keller)
-  busyLevel Int       @default(0)
-  comment   String    @default("")
 }
