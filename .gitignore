@@ -41,7 +41,7 @@ next-env.d.ts
 .vscode
 .idea
 
-.env
+
 /generated/prisma
 
 # installed packages
