@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession } from 'next-auth/react'; // v5 compatible
+import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { BoxArrowRight, Lock, PersonFill, PersonPlusFill } from 'react-bootstrap-icons';
@@ -8,52 +8,145 @@ import { BoxArrowRight, Lock, PersonFill, PersonPlusFill } from 'react-bootstrap
 const NavBar: React.FC = () => {
   const { data: session, status } = useSession();
   const pathName = usePathname();
+
   if (status === 'loading') return null;
+
   const currentUser = session?.user?.email;
   const role = session?.user?.role;
+
   return (
-    <Navbar bg="light" expand="lg">
-      <Container>
-        <Navbar.Brand href="/">Next.js Application Template</Navbar.Brand>
+    <Navbar bg="white" expand="lg" className="border-bottom shadow-sm py-3">
+      <Container fluid className="px-4 position-relative">
+        <Navbar.Brand
+          href="/"
+          className="position-absolute opacity-0"
+          style={{ pointerEvents: 'none' }}
+        >
+          Next.js Application Template
+        </Navbar.Brand>
+
+        <Navbar.Brand href="/" className="fw-bold text-success fs-2">
+          Manoa Pulse
+        </Navbar.Brand>
+
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
+
         <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto justify-content-start">
+          <Nav className="mx-auto gap-4 fw-medium">
+            <Nav.Link href="/" active={pathName === '/'} className="text-success">
+              Home
+            </Nav.Link>
+
+            <Nav.Link
+              href="/pulse-feed"
+              active={pathName === '/pulse-feed'}
+              className="text-secondary"
+            >
+              Pulse Feed
+            </Nav.Link>
+
+            <Nav.Link
+              href="/locations"
+              active={pathName === '/locations'}
+              className="text-secondary"
+            >
+              Locations
+            </Nav.Link>
+
+            <Nav.Link
+              href="/map"
+              active={pathName === '/map'}
+              className="text-secondary"
+            >
+              Map View
+            </Nav.Link>
+
             {currentUser && (
               <>
-                <Nav.Link id="add-stuff-nav" href="/add" active={pathName === '/add'}>
+                <Nav.Link
+                  href="/profile"
+                  active={pathName === '/profile'}
+                  className="text-secondary"
+                >
+                  Profile
+                </Nav.Link>
+
+                <Nav.Link
+                  id="add-stuff-nav"
+                  href="/add"
+                  active={pathName === '/add'}
+                  className="text-secondary"
+                >
                   Add Stuff
                 </Nav.Link>
-                <Nav.Link id="list-stuff-nav" href="/list" active={pathName === '/list'}>
+
+                <Nav.Link
+                  id="list-stuff-nav"
+                  href="/list"
+                  active={pathName === '/list'}
+                  className="text-secondary"
+                >
                   List Stuff
                 </Nav.Link>
               </>
             )}
+
             {currentUser && role === 'ADMIN' && (
-              <Nav.Link id="admin-stuff-nav" href="/admin" active={pathName === '/admin'}>
+              <Nav.Link
+                id="admin-stuff-nav"
+                href="/admin"
+                active={pathName === '/admin'}
+                className="text-secondary"
+              >
                 Admin
               </Nav.Link>
             )}
           </Nav>
+
           <Nav>
             {session ? (
-              <NavDropdown id="login-dropdown" title={currentUser}>
-                <NavDropdown.Item id="login-dropdown-sign-out" href="/api/auth/signout">
-                  <BoxArrowRight />
+              <NavDropdown
+                id="login-dropdown"
+                title={currentUser}
+                align="end"
+                className="fw-semibold"
+              >
+                <NavDropdown.Item
+                  id="login-dropdown-sign-out"
+                  href="/api/auth/signout"
+                >
+                  <BoxArrowRight className="me-2" />
                   Sign Out
                 </NavDropdown.Item>
-                <NavDropdown.Item id="login-dropdown-change-password" href="/auth/change-password">
-                  <Lock />
+
+                <NavDropdown.Item
+                  id="login-dropdown-change-password"
+                  href="/auth/change-password"
+                >
+                  <Lock className="me-2" />
                   Change Password
                 </NavDropdown.Item>
               </NavDropdown>
             ) : (
-              <NavDropdown id="login-dropdown" title="Login">
-                <NavDropdown.Item id="login-dropdown-sign-in" href="/auth/signin">
-                  <PersonFill />
+              <NavDropdown
+                id="login-dropdown"
+                title="Login"
+                align="end"
+                className="fw-semibold text-success"
+              >
+                <NavDropdown.Item
+                  id="login-dropdown-sign-in"
+                  href="/auth/signin"
+                >
+                  <PersonFill className="me-2" />
                   Sign in
                 </NavDropdown.Item>
-                <NavDropdown.Item id="login-dropdown-sign-up" href="/auth/signup">
-                  <PersonPlusFill />
+
+                <NavDropdown.Item
+                  id="login-dropdown-sign-up"
+                  href="/auth/signup"
+                >
+                  <PersonPlusFill className="me-2" />
                   Sign up
                 </NavDropdown.Item>
               </NavDropdown>
