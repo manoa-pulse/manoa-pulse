@@ -1,4 +1,4 @@
-import { prisma } from './lib/prisma';
+import { prisma } from '../src/lib/prisma';
 import { Role, Condition } from '@prisma/client';
 import { hash } from 'bcrypt';
 import * as config from '../config/settings.development.json';
@@ -28,7 +28,7 @@ async function main() {
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
       create: {
-        location,
+        location: data.location,
         busyLevel: data.busyLevel,
         comment: data.comment,
       },
