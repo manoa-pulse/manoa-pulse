@@ -9,16 +9,21 @@ export const AddStuffSchema = Yup.object({
 
 export const UpdateStuffSchema = Yup.object({
   location: Yup.string().oneOf([
-    'Keller',
-    'Art',
-    'Kuykendall',
-    'Bilger',
-    'CampusCenter',
-    'Moore',
+    'HamiltonLibrary',
+    'WarriorRecreationCenter',
+    'CampusCenterFoodCourt',
+    'CampusCenterOutdoorCourt',
+    'TacoBellFoodCourt',
     'ParadisePalms',
-    'POST'
+    'POST2ndFloor',
   ]).required(),
-  busyLevel: Yup.number().positive().required(),
+
+  busyLevel: Yup.number()
+    .required('Busy level is required')
+    .min(1, 'Minimum is 1')
+    .max(10, 'Maximum is 10')
+    .integer('Must be a whole number'),
+
   comment: Yup.string().required(),
 });
 
