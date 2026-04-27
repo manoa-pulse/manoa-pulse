@@ -24,7 +24,7 @@ export const UpdateStuffSchema = Yup.object({
     .max(10, 'Maximum is 10')
     .integer('Must be a whole number'),
 
-  comment: Yup.string().required(),
+  comment: Yup.string().optional().default(''),
 });
 
 export const EditStuffSchema = Yup.object({

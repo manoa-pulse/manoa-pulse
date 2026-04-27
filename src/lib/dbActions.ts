@@ -9,7 +9,7 @@ import { prisma } from './prisma';
  * Adds an entry into the database.
  * @param entry, an object with the following properties: location, busyLevel, comment.
  */
-export async function submitUpdate(entry: { location: string; busyLevel: number; comment: string }) {
+export async function submitUpdate(entry: { location: string; busyLevel: number; comment?: string }) {
   const validLocations = Object.values(EntryLocation);
 
   if (!validLocations.includes(entry.location as EntryLocation)) {
@@ -26,7 +26,7 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
     data: {
       location,
       busyLevel: entry.busyLevel,
-      comment: entry.comment,
+      comment: entry.comment ?? '',
     },
   });
 
