@@ -5,10 +5,15 @@ import * as config from '../config/settings.development.json';
 
 async function main() {
   console.log('Seeding the database');
+
   const password = await hash('changeme', 10);
-  config.defaultAccounts.forEach(async (account) => {
-    const role = account.role as Role || Role.USER;
-    console.log(`  Creating user: ${account.email} with role: ${role}`);
+
+  // ✅ FIX 1: Use for...of instead of forEach
+  for (const account of config.defaultAccounts) {
+    const role = (account.role as Role) || Role.USER;
+
+    console.log(`Creating user: ${account.email} with role: ${role}`);
+
     await prisma.user.upsert({
       where: { email: account.email },
       update: {},
@@ -18,14 +23,18 @@ async function main() {
         role,
       },
     });
-    // console.log(`  Created user: ${user.email} with role: ${user.role}`);
-  });
+  }
+
+  // ✅ FIX 2: safer loop + simpler enum handling
+  let id = 1;
+
   for (const data of config.defaultData) {
-    const location = EntryLocation[data.location as keyof typeof EntryLocation];;
-    console.log(`  Adding entry: ${JSON.stringify(data)}`);
-     
+    const location = data.location as EntryLocation;
+
+    console.log(`Adding entry: ${JSON.stringify(data)}`);
+
     await prisma.entry.upsert({
-      where: { id: config.defaultData.indexOf(data) + 1 },
+      where: { id },
       update: {},
       create: {
         location,
@@ -33,8 +42,11 @@ async function main() {
         comment: data.comment,
       },
     });
+
+    id++;
   }
 }
+
 main()
   .then(() => prisma.$disconnect())
   .catch(async (e) => {
