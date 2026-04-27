@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Button, Card, Col, Container, Row } from 'react-bootstrap';
-import { getPulseData } from '@/lib/getPulseData';
+import { getHourlyPulseData, getPulseData } from '@/lib/getPulseData';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 import { SLUG_TO_LOCATION } from '@/lib/locationSlugs';
 
@@ -16,6 +16,9 @@ const getStatusColor = (occupancy: number) => {
   if (occupancy <= 70) return 'text-warning';
   return 'text-danger';
 };
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const LocationDetailPage = async ({
   params,
@@ -35,8 +38,13 @@ const LocationDetailPage = async ({
     notFound();
   }
 
-  const pulseData = await getPulseData();
+  const [pulseData, hourlyPulseData] = await Promise.all([
+    getPulseData(),
+    getHourlyPulseData(),
+  ]);
   const locationPulse = pulseData.find((item) => item.location === locationKey);
+  const hourlyAverages =
+    hourlyPulseData.find((item) => item.location === locationKey)?.hours ?? [];
 
   const occupancy = locationPulse?.occupancy ?? 0;
   const status = getStatus(occupancy);
@@ -96,32 +104,50 @@ const LocationDetailPage = async ({
                 <div className="d-flex justify-content-between align-items-start">
                   <div>
                     <h2 className="fw-bold text-success">Prediction System</h2>
-                    <p className="text-secondary">Historical busyness trends for today</p>
+                    <p className="text-secondary">
+                      Historical hourly averages from submitted updates
+                    </p>
                   </div>
 
-                  <span className="text-success fw-semibold small">TODAY</span>
+                  <span className="text-success fw-semibold small">
+                    {locationPulse?.samples ?? 0} UPDATES
+                  </span>
                 </div>
 
-                <div
-                  className="d-flex align-items-end justify-content-between mt-5"
-                  style={{ height: '180px' }}
-                >
-                  {[20, 35, 60, occupancy, 75, 45, 25].map((height, index) => (
-                    <div key={index} className="text-center">
-                      <div
-                        style={{
-                          width: '36px',
-                          height: `${Math.max(height, 8)}%`,
-                          backgroundColor: index === 3 ? '#dc3545' : '#83e6a5',
-                          borderRadius: '0.4rem',
-                        }}
-                      />
-                      <small className="text-muted d-block mt-2">
-                        {['8A', '10A', '12P', '2P', '4P', '6P', '8P'][index]}
-                      </small>
-                    </div>
-                  ))}
-                </div>
+                {hourlyAverages.length > 0 ? (
+                  <div
+                    className="d-flex align-items-end justify-content-between gap-3 mt-5"
+                    style={{ height: '220px' }}
+                  >
+                    {hourlyAverages.map((hour) => (
+                      <div key={hour.hour} className="text-center flex-fill">
+                        <div className="d-flex align-items-end justify-content-center" style={{ height: '150px' }}>
+                          <div
+                            title={`${hour.label}: ${hour.occupancy}% average`}
+                            style={{
+                              width: '100%',
+                              maxWidth: '42px',
+                              height: `${Math.max(hour.occupancy, 8)}%`,
+                              backgroundColor: hour.occupancy > 70 ? '#dc3545' : '#83e6a5',
+                              borderRadius: '0.4rem',
+                            }}
+                          />
+                        </div>
+                        <small className="text-muted d-block mt-2">{hour.label}</small>
+                        <small className="fw-semibold d-block">{hour.occupancy}%</small>
+                        <small className="text-secondary d-block">
+                          {hour.samples} update{hour.samples === 1 ? '' : 's'}
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-light rounded-4 text-center p-5 mt-4">
+                    <h4 className="text-secondary mb-0">
+                      No submitted updates yet for this location.
+                    </h4>
+                  </div>
+                )}
               </div>
             </Card>
           </Col>
