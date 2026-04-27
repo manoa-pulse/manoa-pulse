@@ -22,10 +22,10 @@ model Stuff {
 }
 
 model Entry {
-  id        Int      @id @default(autoincrement())
-  location  Location @default(Keller)
-  busyLevel Int      @default(0)
-  comment   String   @default("")
+  id        Int           @id @default(autoincrement())
+  busyLevel Int           @default(0)
+  comment   String        @default("")
+  location  EntryLocation @default(Keller)
 }
 
 enum Role {
@@ -40,7 +40,7 @@ enum Condition {
   poor
 }
 
-enum Location {
+enum EntryLocation {
   Keller
   Art
   Kuykendall

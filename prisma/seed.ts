@@ -1,5 +1,5 @@
 import { prisma } from '../src/lib/prisma';
-import { Role, Condition } from '@prisma/client';
+import { Role, EntryLocation } from '@prisma/client';
 import { hash } from 'bcrypt';
 import * as config from '../config/settings.development.json';
 
@@ -21,14 +21,14 @@ async function main() {
     // console.log(`  Created user: ${user.email} with role: ${user.role}`);
   });
   for (const data of config.defaultData) {
-    const location = data.location as unknown as Location;
+    const location = EntryLocation[data.location as keyof typeof EntryLocation];;
     console.log(`  Adding entry: ${JSON.stringify(data)}`);
      
-    await prisma.stuff.upsert({
+    await prisma.entry.upsert({
       where: { id: config.defaultData.indexOf(data) + 1 },
       update: {},
       create: {
-        location: data.location,
+        location,
         busyLevel: data.busyLevel,
         comment: data.comment,
       },

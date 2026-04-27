@@ -4,12 +4,12 @@
     { "email": "john@foo.com", "password": "changeme" }
   ],
   "defaultData": [
-    { "location" : "Keller", "busyLevel": "0", "comment" : "Default comment"},
-    { "location" : "Keller", "busyLevel": "5", "comment" : ""},
-    { "location" : "Keller", "busyLevel": "10", "comment" : ""},
-    { "location" : "Art", "busyLevel": "0", "comment" : "Default comment"},
-    { "location" : "Bilger", "busyLevel": "3", "comment" : "Default comment"},
-    { "location" : "ParadisePalms", "busyLevel": "0", "comment" : ""},
-    { "location" : "POST", "busyLevel": "10", "comment" : ""}
+    { "location" : "Keller", "busyLevel": 0, "comment" : "Default comment"},
+    { "location" : "Keller", "busyLevel": 5, "comment" : ""},
+    { "location" : "Keller", "busyLevel": 10, "comment" : ""},
+    { "location" : "Art", "busyLevel": 0, "comment" : "Default comment"},
+    { "location" : "Bilger", "busyLevel": 3, "comment" : "Default comment"},
+    { "location" : "ParadisePalms", "busyLevel": 0, "comment" : ""},
+    { "location" : "POST", "busyLevel": 10, "comment" : ""}
   ]
 }

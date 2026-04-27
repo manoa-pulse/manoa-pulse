@@ -30,6 +30,8 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# env files (can opt-in for committing if needed)
+.env*
 
 # vercel
 .vercel
@@ -41,7 +43,7 @@ next-env.d.ts
 .vscode
 .idea
 
-
+.env
 /generated/prisma
 
 # installed packages
@@ -57,3 +59,4 @@ package-lock.json
 tests/playwright-auth-sessions/
 
 .vercel
+.env*.local
