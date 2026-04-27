@@ -20,6 +20,25 @@ if (!fs.existsSync(SESSION_STORAGE_PATH)) {
 interface AuthFixtures {
   getUserPage: (email: string, password: string) => Promise<Page>;
 }
+
+/**
+ * Check whether the current page shows the authenticated user.
+ */
+async function isUserAuthenticated(page: Page, email: string): Promise<boolean> {
+  try {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    const loginDropdown = page.locator('#login-dropdown');
+
+    await expect(loginDropdown).toContainText(email, { timeout: 5000 });
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Authenticate using the UI with robust waiting and error handling
  */
@@ -27,7 +46,7 @@ async function authenticateWithUI(
   page: Page,
   email: string,
   password: string,
-  sessionName: string
+  sessionName: string,
 ): Promise<void> {
   const sessionPath = path.join(SESSION_STORAGE_PATH, `${sessionName}.json`);
 
@@ -37,18 +56,7 @@ async function authenticateWithUI(
       const sessionData = JSON.parse(fs.readFileSync(sessionPath, 'utf8'));
       await page.context().addCookies(sessionData.cookies);
 
-      // Navigate to homepage to verify session
-      await page.goto(BASE_URL);
-      await page.waitForLoadState('networkidle');
-
-      // Check if we're authenticated by looking for a sign-out option or user email
-      const isAuthenticated = await Promise.race([
-        page.getByText(email).isVisible().then((visible) => visible),
-        page.getByRole('button', { name: email }).isVisible().then((visible) => visible),
-        page.getByText('Sign out').isVisible().then((visible) => visible),
-        page.getByRole('button', { name: 'Sign out' }).isVisible().then((visible) => visible),
-        new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000)),
-      ]);
+      const isAuthenticated = await isUserAuthenticated(page, email);
 
       if (isAuthenticated) {
         console.log(`✓ Restored session for ${email}`);
@@ -77,25 +85,22 @@ async function authenticateWithUI(
 
     // Click submit button and wait for navigation
     const submitButton = page.getByRole('button', { name: /sign[ -]?in/i });
-    if (!await submitButton.isVisible({ timeout: 1000 })) {
-      // Try alternative selector if the first one doesn't work
+
+    if (!(await submitButton.isVisible({ timeout: 1000 }))) {
       await page.getByRole('button', { name: /log[ -]?in/i }).click();
     } else {
       await submitButton.click();
     }
 
+    // Wait for the navbar dropdown to show the logged-in email
+    const loginDropdown = page.locator('#login-dropdown');
 
-    // Wait for a clear post-login indicator (user button or sign out button)
-    const userButton = page.getByRole('button', { name: email });
-    const signOutButton = page.getByRole('button', { name: /sign out/i });
-    await Promise.any([
-      expect(userButton).toBeVisible({ timeout: 10000 }),
-      expect(signOutButton).toBeVisible({ timeout: 10000 })
-    ]);
+    await expect(loginDropdown).toContainText(email, { timeout: 10000 });
 
     // Save session for future tests
     const cookies = await page.context().cookies();
     fs.writeFileSync(sessionPath, JSON.stringify({ cookies }));
+
     console.log(`✓ Successfully authenticated ${email} and saved session`);
   } catch (error) {
     console.error(`× Authentication failed for ${email}:`, error);
@@ -109,7 +114,7 @@ async function authenticateWithUI(
  */
 async function fillFormWithRetry(
   page: Page,
-  fields: Array<{ selector: string; value: string }>
+  fields: Array<{ selector: string; value: string }>,
 ): Promise<void> {
   for (const field of fields) {
     let attempts = 0;
@@ -118,16 +123,20 @@ async function fillFormWithRetry(
     while (attempts < maxAttempts) {
       try {
         const element = page.locator(field.selector);
+
         await element.waitFor({ state: 'visible', timeout: 2000 });
         await element.clear();
         await element.fill(field.value);
-        await element.evaluate((el) => el.blur()); // Trigger blur event
+        await element.evaluate((el) => el.blur());
+
         break;
       } catch {
         attempts++;
+
         if (attempts >= maxAttempts) {
           throw new Error(`Failed to fill field ${field.selector} after ${maxAttempts} attempts`);
         }
+
         await page.waitForTimeout(500);
       }
     }
@@ -142,6 +151,7 @@ export const test = base.extend<AuthFixtures>({
       const page = await context.newPage();
 
       await authenticateWithUI(page, email, password, `session-${email}`);
+
       return page;
     };
 

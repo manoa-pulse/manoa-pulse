@@ -1,16 +1,19 @@
 name: ci
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:18
@@ -25,40 +28,53 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/playwright_test
       AUTH_SECRET: thisisanauthsecretfortestingonly
       AUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
+      AUTH_TRUST_HOST: true
       PLAYWRIGHT_TEST_BASE_URL: http://localhost:3000
       NODE_ENV: test
-    
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
+
       - name: Install dependencies
         run: npm install
+
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+
       - name: Generate Prisma Client
         run: npx prisma generate
+
       - name: Run database migrations
         run: npx prisma migrate deploy
+
       - name: Seed database
-        run: npm run seed
+        run: npx prisma db seed
+
       - name: Verify database connection
         run: npx prisma db execute --stdin <<< "SELECT COUNT(*) FROM \"User\";"
+
       - name: Run ESLint
         run: npm run lint
+
       - name: Build Next.js application
         run: npm run build
+
       - name: Clean up session files
         run: rm -rf tests/playwright-auth-sessions/*
-      # Playwright should start the server automatically using webServer config
+
       - name: Run Playwright tests
         run: npm run playwright
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always() && env.ACT != 'true'
@@ -66,8 +82,8 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
+
       - name: Playwright Report Access Note
         if: always() && env.ACT != 'true'
         run: |
           echo "::notice::To view the Playwright test report, download the 'playwright-report' artifact from the workflow run's summary page in GitHub Actions."
-     
