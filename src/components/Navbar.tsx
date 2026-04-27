@@ -22,7 +22,7 @@ const NavBar: React.FC = () => {
           className="position-absolute opacity-0"
           style={{ pointerEvents: 'none' }}
         >
-          Next.js Application Template
+          Manoa Pulse
         </Navbar.Brand>
 
         <Navbar.Brand href="/" className="fw-bold text-success fs-2">
@@ -54,8 +54,8 @@ const NavBar: React.FC = () => {
             </Nav.Link>
 
             <Nav.Link
-              href="/map"
-              active={pathName === '/map'}
+              href="/map-view"
+              active={pathName === '/map-view'}
               className="text-secondary"
             >
               Map View
@@ -64,29 +64,19 @@ const NavBar: React.FC = () => {
             {currentUser && (
               <>
                 <Nav.Link
+                  href="/submit"
+                  active={pathName === '/submit'}
+                  className="text-secondary"
+                >
+                  Submit Update
+                </Nav.Link>
+
+                <Nav.Link
                   href="/profile"
                   active={pathName === '/profile'}
                   className="text-secondary"
                 >
                   Profile
-                </Nav.Link>
-
-                <Nav.Link
-                  id="add-stuff-nav"
-                  href="/add"
-                  active={pathName === '/add'}
-                  className="text-secondary"
-                >
-                  Add Stuff
-                </Nav.Link>
-
-                <Nav.Link
-                  id="list-stuff-nav"
-                  href="/list"
-                  active={pathName === '/list'}
-                  className="text-secondary"
-                >
-                  List Stuff
                 </Nav.Link>
               </>
             )}

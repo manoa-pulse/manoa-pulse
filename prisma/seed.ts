@@ -15,7 +15,9 @@ async function main() {
 
     await prisma.user.upsert({
       where: { email: account.email },
-      update: {},
+      update: {
+        role,
+      },
       create: {
         email: account.email,
         password,
@@ -33,8 +35,13 @@ async function main() {
 
     await prisma.entry.upsert({
       where: { id },
-      update: {},
+      update: {
+        location,
+        busyLevel: data.busyLevel,
+        comment: data.comment,
+      },
       create: {
+        id,
         location,
         busyLevel: data.busyLevel,
         comment: data.comment,

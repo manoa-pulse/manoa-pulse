@@ -16,6 +16,10 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
     throw new Error(`Invalid location: ${entry.location}`);
   }
 
+  if (entry.busyLevel < 1 || entry.busyLevel > 10) {
+    throw new Error('Busy level must be between 1 and 10');
+  }
+
   const location = entry.location as EntryLocation;
 
   await prisma.entry.create({
@@ -26,8 +30,8 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
     },
   });
 
-  // After adding, redirect to the list page
-  redirect('/list');
+  // After adding, redirect to the pulse feed
+  redirect('/pulse-feed');
 }
 
 /**

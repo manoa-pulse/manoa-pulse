@@ -1,11 +1,10 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Col, Container, Row } from 'react-bootstrap';
 
 /** The Home page. */
 const Home = () => (
   <main className="bg-light min-vh-100">
-
-
     <Container fluid className="px-5 py-5">
       <Row className="align-items-center min-vh-100">
         <Col lg={6} className="mb-5 mb-lg-0">
@@ -60,9 +59,12 @@ const Home = () => (
               maxWidth: '650px',
             }}
           >
-            <img
-              src="https://hawaiiathletics.com/images/2024/11/19/Lower_Hawaii_Athletics_2024-20.jpg"
+            <Image
+              src="/Homepage.png"
               alt="University of Hawaiʻi at Mānoa campus"
+              width={650}
+              height={700}
+              priority
               style={{
                 height: '700px',
                 objectFit: 'cover',

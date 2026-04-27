@@ -4,12 +4,12 @@
     { "email": "john@foo.com", "password": "changeme" }
   ],
   "defaultData": [
-    { "location": "HamiltonLibrary", "busyLevel": 0, "comment": "Default comment" },
+    { "location": "HamiltonLibrary", "busyLevel": 1, "comment": "Default comment" },
     { "location": "WarriorRecreationCenter", "busyLevel": 5, "comment": "" },
     { "location": "CampusCenterFoodCourt", "busyLevel": 10, "comment": "" },
-    { "location": "CampusCenterOutdoorCourt", "busyLevel": 0, "comment": "Default comment" },
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 1, "comment": "Default comment" },
     { "location": "TacoBellFoodCourt", "busyLevel": 3, "comment": "Default comment" },
-    { "location": "ParadisePalms", "busyLevel": 0, "comment": "" },
+    { "location": "ParadisePalms", "busyLevel": 1, "comment": "" },
     { "location": "POST2ndFloor", "busyLevel": 10, "comment": "" }
   ]
 }
