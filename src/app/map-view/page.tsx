@@ -1,6 +1,9 @@
 import MapHeat from '@/components/MapHeat';
 import { getPulseData } from '@/lib/getPulseData';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const MapPage = async () => {
   const averaged = await getPulseData();
 
