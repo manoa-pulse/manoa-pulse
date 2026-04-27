@@ -4,12 +4,42 @@
     { "email": "john@foo.com", "password": "changeme" }
   ],
   "defaultData": [
-    { "location": "HamiltonLibrary", "busyLevel": 1, "comment": "Default comment" },
-    { "location": "WarriorRecreationCenter", "busyLevel": 5, "comment": "" },
-    { "location": "CampusCenterFoodCourt", "busyLevel": 10, "comment": "" },
-    { "location": "CampusCenterOutdoorCourt", "busyLevel": 1, "comment": "Default comment" },
-    { "location": "TacoBellFoodCourt", "busyLevel": 3, "comment": "Default comment" },
-    { "location": "ParadisePalms", "busyLevel": 1, "comment": "" },
-    { "location": "POST2ndFloor", "busyLevel": 10, "comment": "" }
+    { "location": "HamiltonLibrary", "busyLevel": 2, "comment": "Quiet morning, lots of seats open", "createdAt": "2026-04-22T18:00:00.000Z" },
+
+    { "location": "WarriorRecreationCenter", "busyLevel": 4, "comment": "Machines mostly available", "createdAt": "2026-04-22T19:00:00.000Z" },
+    { "location": "WarriorRecreationCenter", "busyLevel": 5, "comment": "Moderate gym traffic", "createdAt": "2026-04-23T22:00:00.000Z" },
+    { "location": "WarriorRecreationCenter", "busyLevel": 8, "comment": "After-class rush", "createdAt": "2026-04-25T02:00:00.000Z" },
+    { "location": "WarriorRecreationCenter", "busyLevel": 9, "comment": "Very busy weight room", "createdAt": "2026-04-26T04:30:00.000Z" },
+    { "location": "WarriorRecreationCenter", "busyLevel": 7, "comment": "Cardio area is full", "createdAt": "2026-04-27T03:30:00.000Z" },
+
+    { "location": "CampusCenterFoodCourt", "busyLevel": 7, "comment": "Lunch lines are building", "createdAt": "2026-04-22T22:00:00.000Z" },
+    { "location": "CampusCenterFoodCourt", "busyLevel": 9, "comment": "Crowded lunch rush", "createdAt": "2026-04-23T22:30:00.000Z" },
+    { "location": "CampusCenterFoodCourt", "busyLevel": 10, "comment": "Packed, hard to find seats", "createdAt": "2026-04-24T22:45:00.000Z" },
+    { "location": "CampusCenterFoodCourt", "busyLevel": 6, "comment": "Busy but moving", "createdAt": "2026-04-26T00:30:00.000Z" },
+    { "location": "CampusCenterFoodCourt", "busyLevel": 8, "comment": "Long lines at peak", "createdAt": "2026-04-27T22:15:00.000Z" },
+
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 2, "comment": "Many open tables", "createdAt": "2026-04-22T19:30:00.000Z" },
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 3, "comment": "Light outdoor seating use", "createdAt": "2026-04-23T23:15:00.000Z" },
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 5, "comment": "Some tables filling", "createdAt": "2026-04-24T23:00:00.000Z" },
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 4, "comment": "Casual lunch crowd", "createdAt": "2026-04-26T01:00:00.000Z" },
+    { "location": "CampusCenterOutdoorCourt", "busyLevel": 6, "comment": "Popular shaded seats are taken", "createdAt": "2026-04-27T21:45:00.000Z" },
+
+    { "location": "TacoBellFoodCourt", "busyLevel": 3, "comment": "Short line", "createdAt": "2026-04-22T20:30:00.000Z" },
+    { "location": "TacoBellFoodCourt", "busyLevel": 6, "comment": "Moderate wait", "createdAt": "2026-04-23T23:45:00.000Z" },
+    { "location": "TacoBellFoodCourt", "busyLevel": 7, "comment": "Line wraps around the counter", "createdAt": "2026-04-24T22:15:00.000Z" },
+    { "location": "TacoBellFoodCourt", "busyLevel": 5, "comment": "Seats still available", "createdAt": "2026-04-26T02:00:00.000Z" },
+    { "location": "TacoBellFoodCourt", "busyLevel": 8, "comment": "Very busy dinner rush", "createdAt": "2026-04-27T04:45:00.000Z" },
+
+    { "location": "ParadisePalms", "busyLevel": 2, "comment": "Open and quiet", "createdAt": "2026-04-22T18:30:00.000Z" },
+    { "location": "ParadisePalms", "busyLevel": 4, "comment": "Food truck traffic picking up", "createdAt": "2026-04-23T21:30:00.000Z" },
+    { "location": "ParadisePalms", "busyLevel": 6, "comment": "Popular tables are occupied", "createdAt": "2026-04-24T22:30:00.000Z" },
+    { "location": "ParadisePalms", "busyLevel": 5, "comment": "Moderate crowd", "createdAt": "2026-04-26T00:00:00.000Z" },
+    { "location": "ParadisePalms", "busyLevel": 7, "comment": "Busy around lunch", "createdAt": "2026-04-27T22:00:00.000Z" },
+
+    { "location": "POST2ndFloor", "busyLevel": 3, "comment": "Quiet study area", "createdAt": "2026-04-22T20:00:00.000Z" },
+    { "location": "POST2ndFloor", "busyLevel": 5, "comment": "About half full", "createdAt": "2026-04-23T20:45:00.000Z" },
+    { "location": "POST2ndFloor", "busyLevel": 7, "comment": "Only a few tables left", "createdAt": "2026-04-24T23:45:00.000Z" },
+    { "location": "POST2ndFloor", "busyLevel": 8, "comment": "Very limited seating", "createdAt": "2026-04-26T03:00:00.000Z" },
+    { "location": "POST2ndFloor", "busyLevel": 6, "comment": "Study rooms are filling", "createdAt": "2026-04-27T02:30:00.000Z" }
   ]
 }
