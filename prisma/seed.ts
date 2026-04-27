@@ -8,7 +8,6 @@ async function main() {
 
   const password = await hash('changeme', 10);
 
-  // ✅ FIX 1: Use for...of instead of forEach
   for (const account of config.defaultAccounts) {
     const role = (account.role as Role) || Role.USER;
 
@@ -25,7 +24,6 @@ async function main() {
     });
   }
 
-  // ✅ FIX 2: safer loop + simpler enum handling
   let id = 1;
 
   for (const data of config.defaultData) {
