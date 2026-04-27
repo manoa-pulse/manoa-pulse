@@ -11,8 +11,10 @@ import * as Yup from 'yup';
 import { submitUpdate } from '@/lib/dbActions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { UpdateStuffSchema } from '@/lib/validationSchemas';
+import { LOCATION_CONFIG } from '@/lib/locationConfig';
 
 type SubmitUpdateData = Yup.InferType<typeof UpdateStuffSchema>;
+type LocationKey = keyof typeof LOCATION_CONFIG;
 
 const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
   await submitUpdate(data);
@@ -25,6 +27,7 @@ const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
 const SubmitUpdateForm: React.FC = () => {
   const { status } = useSession();
   const [busyLevelValue, setBusyLevelValue] = useState(1);
+  const [selectedLocation, setSelectedLocation] = useState<LocationKey>('HamiltonLibrary');
 
   const {
     register,
@@ -48,6 +51,14 @@ const SubmitUpdateForm: React.FC = () => {
     redirect('/auth/signin');
   }
 
+  const selectedLocationConfig = LOCATION_CONFIG[selectedLocation];
+
+  const locationRegister = register('location', {
+    onChange: (event) => {
+      setSelectedLocation(event.target.value as LocationKey);
+    },
+  });
+
   const busyLevelRegister = register('busyLevel', {
     valueAsNumber: true,
     onChange: (event) => {
@@ -61,13 +72,14 @@ const SubmitUpdateForm: React.FC = () => {
       busyLevel: 1,
       comment: '',
     });
+    setSelectedLocation('HamiltonLibrary');
     setBusyLevelValue(1);
   };
 
   return (
     <Container className="py-3">
       <Row className="justify-content-center">
-        <Col xs={5}>
+        <Col xs={12} md={8} lg={6}>
           <Col className="text-center">
             <h2>Submit Update</h2>
           </Col>
@@ -75,24 +87,43 @@ const SubmitUpdateForm: React.FC = () => {
           <Card>
             <Card.Body>
               <Form onSubmit={handleSubmit(onSubmit)}>
-                <Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>Location</Form.Label>
                   <select
-                    {...register('location')}
+                    {...locationRegister}
                     className={`form-control ${errors.location ? 'is-invalid' : ''}`}
                   >
-                    <option value="HamiltonLibrary">Hamilton Library</option>
-                    <option value="WarriorRecreationCenter">Warrior Recreation Center</option>
-                    <option value="CampusCenterFoodCourt">Campus Center Food Court</option>
-                    <option value="CampusCenterOutdoorCourt">Campus Center Outdoor Court</option>
-                    <option value="TacoBellFoodCourt">Taco Bell Food Court</option>
-                    <option value="ParadisePalms">Paradise Palms</option>
-                    <option value="POST2ndFloor">POST 2nd Floor</option>
+                    {Object.entries(LOCATION_CONFIG).map(([key, value]) => (
+                      <option key={key} value={key}>
+                        {value.label}
+                      </option>
+                    ))}
                   </select>
                   <div className="invalid-feedback">{errors.location?.message}</div>
                 </Form.Group>
 
-                <Form.Group>
+                <Card className="mb-3">
+                  <Card.Body>
+                    <h5>{selectedLocationConfig.label}</h5>
+                    <p className="text-muted mb-2">{selectedLocationConfig.description}</p>
+                    <p className="mb-2">
+                      <strong>Category:</strong> {selectedLocationConfig.category}
+                    </p>
+
+                    <div>
+                      <strong>Busyness Scale:</strong>
+                      <div className="mt-2">
+                        {Object.entries(selectedLocationConfig.scale).map(([level, text]) => (
+                          <div key={level}>
+                            <strong>{level}:</strong> {text}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card.Body>
+                </Card>
+
+                <Form.Group className="mb-3">
                   <Form.Label>How busy is it? (1–10)</Form.Label>
 
                   <input
@@ -113,7 +144,7 @@ const SubmitUpdateForm: React.FC = () => {
                   </div>
                 </Form.Group>
 
-                <Form.Group>
+                <Form.Group className="mb-3">
                   <Form.Label>Extra comment?</Form.Label>
                   <input
                     type="text"
