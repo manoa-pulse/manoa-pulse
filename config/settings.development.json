@@ -4,9 +4,12 @@
     { "email": "john@foo.com", "password": "changeme" }
   ],
   "defaultData": [
-    { "name": "Basket", "quantity": 3, "owner": "john@foo.com", "condition": "excellent" },
-    { "name": "Bicycle", "quantity": 2, "owner": "john@foo.com", "condition": "poor" },
-    { "name": "Banana", "quantity": 2, "owner": "admin@foo.com", "condition": "good" },
-    { "name": "Boogie Board", "quantity": 2, "owner": "admin@foo.com", "condition": "excellent" }
+    { "location" : "Keller", "busyLevel": 0, "comment" : "Default comment"},
+    { "location" : "Keller", "busyLevel": 5, "comment" : ""},
+    { "location" : "Keller", "busyLevel": 10, "comment" : ""},
+    { "location" : "Art", "busyLevel": 0, "comment" : "Default comment"},
+    { "location" : "Bilger", "busyLevel": 3, "comment" : "Default comment"},
+    { "location" : "ParadisePalms", "busyLevel": 0, "comment" : ""},
+    { "location" : "POST", "busyLevel": 10, "comment" : ""}
   ]
 }
