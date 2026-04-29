@@ -22,6 +22,7 @@ type Spot = {
   borderColor: string;
   badgeBg: string;
   badgeColor: string;
+  dataSource: 'LIVE' | 'PREDICTED' | 'NO_DATA';
   href?: string;
 };
 
@@ -76,9 +77,33 @@ const getVisualStyle = (occupancy: number) => {
   };
 };
 
+const getDataSourceStyle = (dataSource: 'LIVE' | 'PREDICTED' | 'NO_DATA') => {
+  if (dataSource === 'LIVE') {
+    return {
+      label: 'LIVE UPDATE',
+      backgroundColor: '#dff8e7',
+      color: '#198754',
+    };
+  }
+
+  if (dataSource === 'PREDICTED') {
+    return {
+      label: 'PREDICTED',
+      backgroundColor: '#fff3cd',
+      color: '#b58105',
+    };
+  }
+
+  return {
+    label: 'NO DATA',
+    backgroundColor: '#e9ecef',
+    color: '#6c757d',
+  };
+};
+
 const formatLastUpdated = (lastUpdated: string | null) => {
   if (!lastUpdated) {
-    return 'No updates yet';
+    return 'No live update';
   }
 
   const updatedDate = new Date(lastUpdated);
@@ -127,6 +152,7 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
       category: LOCATION_CATEGORIES[item.location] ?? 'STUDY',
       occupancy: item.occupancy,
       updated: formatLastUpdated(item.lastUpdated),
+      dataSource: item.dataSource,
       href: LOCATION_HREFS[item.location],
       ...getVisualStyle(item.occupancy),
     }));
@@ -273,6 +299,7 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
               {filteredSpots.length > 0 ? (
                 filteredSpots.map((spot) => {
                   const label = LOCATION_LABELS[spot.location] ?? spot.location;
+                  const sourceStyle = getDataSourceStyle(spot.dataSource);
 
                   const cardContent = (
                     <Card
@@ -316,7 +343,17 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
                           </span>
                         </div>
 
-                        <div className="d-flex justify-content-end text-secondary">
+                        <div className="d-flex justify-content-between align-items-center text-secondary">
+                          <span
+                            className="px-3 py-2 rounded-pill fw-semibold small"
+                            style={{
+                              backgroundColor: sourceStyle.backgroundColor,
+                              color: sourceStyle.color,
+                            }}
+                          >
+                            {sourceStyle.label}
+                          </span>
+
                           <small>{spot.updated}</small>
                         </div>
                       </div>
