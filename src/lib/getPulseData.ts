@@ -1,14 +1,21 @@
 import { EntryLocation } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import {
+  getLocationHoursStatus,
+  isWithinLocationHours,
+} from '@/lib/locationHours';
 import { unstable_noStore } from 'next/cache';
 
 export type PulseData = {
   location: string;
-  busyLevel: number;
-  occupancy: number;
+  busyLevel: number | null;
+  occupancy: number | null;
   lastUpdated: string | null;
   samples: number;
-  dataSource: 'LIVE' | 'PREDICTED' | 'NO_DATA';
+  dataSource: 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS';
+  isOpen: boolean;
+  hoursStatus: string;
+  todayHours: string;
 };
 
 export type HourlyPulseData = {
@@ -142,6 +149,10 @@ export const getPulseData = async (): Promise<PulseData[]> => {
   recentEntries.forEach((entry) => {
     const location = entry.location;
 
+    if (!isWithinLocationHours(location, entry.createdAt)) {
+      return;
+    }
+
     recentGrouped[location].busyLevels.push(entry.busyLevel);
 
     const currentLatestDate = recentGrouped[location].latestDate;
@@ -154,6 +165,10 @@ export const getPulseData = async (): Promise<PulseData[]> => {
   historicalEntries.forEach((entry) => {
     const location = entry.location;
     const hour = getHawaiiHour(entry.createdAt);
+
+    if (!isWithinLocationHours(location, entry.createdAt)) {
+      return;
+    }
 
     if (hour < HISTORICAL_START_HOUR || hour > HISTORICAL_END_HOUR) {
       return;
@@ -176,6 +191,25 @@ export const getPulseData = async (): Promise<PulseData[]> => {
   });
 
   return ALL_LOCATIONS.map((location) => {
+    const hoursStatus = getLocationHoursStatus(location);
+    const baseHoursData = {
+      isOpen: hoursStatus.isOpen,
+      hoursStatus: hoursStatus.statusText,
+      todayHours: hoursStatus.todayHoursText,
+    };
+
+    if (!hoursStatus.isOpen) {
+      return {
+        location,
+        busyLevel: null,
+        occupancy: null,
+        lastUpdated: null,
+        samples: 0,
+        dataSource: 'AFTER_HOURS',
+        ...baseHoursData,
+      };
+    }
+
     const recentValues = recentGrouped[location];
 
     if (recentValues.busyLevels.length > 0) {
@@ -190,6 +224,7 @@ export const getPulseData = async (): Promise<PulseData[]> => {
         lastUpdated: recentValues.latestDate ? recentValues.latestDate.toISOString() : null,
         samples: recentValues.busyLevels.length,
         dataSource: 'LIVE',
+        ...baseHoursData,
       };
     }
 
@@ -210,6 +245,7 @@ export const getPulseData = async (): Promise<PulseData[]> => {
         lastUpdated: null,
         samples: predictionValues.busyLevels.length,
         dataSource: 'PREDICTED',
+        ...baseHoursData,
       };
     }
 
@@ -220,6 +256,7 @@ export const getPulseData = async (): Promise<PulseData[]> => {
       lastUpdated: null,
       samples: 0,
       dataSource: 'NO_DATA',
+      ...baseHoursData,
     };
   });
 };
@@ -245,6 +282,10 @@ export const getHourlyPulseData = async (): Promise<LocationHourlyPulseData[]> =
   raw.forEach((entry) => {
     const location = entry.location;
     const hour = getHawaiiHour(entry.createdAt);
+
+    if (!isWithinLocationHours(location, entry.createdAt)) {
+      return;
+    }
 
     if (hour < HISTORICAL_START_HOUR || hour > HISTORICAL_END_HOUR) {
       return;

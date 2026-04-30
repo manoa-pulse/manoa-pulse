@@ -5,19 +5,23 @@ import { getHourlyPulseData, getPulseData } from '@/lib/getPulseData';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 import { SLUG_TO_LOCATION } from '@/lib/locationSlugs';
 
-const getStatus = (occupancy: number) => {
+type DataSource = 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS';
+
+const getStatus = (occupancy: number | null | undefined) => {
+  if (occupancy === null || occupancy === undefined) return 'AFTER HOURS';
   if (occupancy <= 30) return 'LOW';
   if (occupancy <= 70) return 'MODERATE';
   return 'VERY BUSY';
 };
 
-const getStatusColor = (occupancy: number) => {
+const getStatusColor = (occupancy: number | null | undefined) => {
+  if (occupancy === null || occupancy === undefined) return 'text-secondary';
   if (occupancy <= 30) return 'text-success';
   if (occupancy <= 70) return 'text-warning';
   return 'text-danger';
 };
 
-const getDataSourceLabel = (dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA') => {
+const getDataSourceLabel = (dataSource?: DataSource) => {
   if (dataSource === 'LIVE') {
     return {
       label: '🔴 LIVE UPDATE',
@@ -29,6 +33,13 @@ const getDataSourceLabel = (dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA') => {
     return {
       label: '🟡 PREDICTED STATUS',
       description: 'Based on historical prediction data for this time of day.',
+    };
+  }
+
+  if (dataSource === 'AFTER_HOURS') {
+    return {
+      label: '⚪ AFTER HOURS',
+      description: 'This location is currently closed, so current busyness is not shown.',
     };
   }
 
@@ -68,10 +79,11 @@ const LocationDetailPage = async ({
   const hourlyAverages =
     hourlyPulseData.find((item) => item.location === locationKey)?.hours ?? [];
 
-  const occupancy = locationPulse?.occupancy ?? 0;
+  const occupancy = locationPulse?.occupancy ?? null;
   const status = getStatus(occupancy);
   const statusColor = getStatusColor(occupancy);
   const dataSourceInfo = getDataSourceLabel(locationPulse?.dataSource);
+  const isAfterHours = locationPulse?.dataSource === 'AFTER_HOURS';
 
   return (
     <main className="bg-light py-4">
@@ -107,19 +119,39 @@ const LocationDetailPage = async ({
                 {config.description}
               </p>
 
-              <p className="mb-0" style={{ maxWidth: '560px', opacity: 0.9 }}>
+              <p className="mb-2" style={{ maxWidth: '560px', opacity: 0.9 }}>
                 {dataSourceInfo.description}
               </p>
+
+              {locationPulse && (
+                <p className="mb-0 fw-semibold" style={{ maxWidth: '560px', opacity: 0.95 }}>
+                  {locationPulse.hoursStatus} • Today: {locationPulse.todayHours}
+                </p>
+              )}
             </Col>
 
             <Col md={5} className="text-center">
-              <div className="display-1 fw-bold">{occupancy}%</div>
-              <div
-                className={`bg-white ${statusColor} fw-bold rounded-pill px-5 py-3 d-inline-block mt-3`}
-                style={{ letterSpacing: '0.12rem' }}
-              >
-                {status}
-              </div>
+              {isAfterHours ? (
+                <>
+                  <div className="display-3 fw-bold">AFTER HOURS</div>
+                  <div
+                    className="bg-white text-secondary fw-bold rounded-pill px-5 py-3 d-inline-block mt-3"
+                    style={{ letterSpacing: '0.12rem' }}
+                  >
+                    CLOSED
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="display-1 fw-bold">{occupancy ?? 0}%</div>
+                  <div
+                    className={`bg-white ${statusColor} fw-bold rounded-pill px-5 py-3 d-inline-block mt-3`}
+                    style={{ letterSpacing: '0.12rem' }}
+                  >
+                    {status}
+                  </div>
+                </>
+              )}
             </Col>
           </Row>
         </section>
