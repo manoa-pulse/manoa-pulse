@@ -22,11 +22,12 @@ model Stuff {
 }
 
 model Entry {
-  id        Int           @id @default(autoincrement())
-  busyLevel Int           @default(0)
-  comment   String        @default("")
-  location  EntryLocation @default(HamiltonLibrary)
-  createdAt DateTime      @default(now())
+  id          Int           @id @default(autoincrement())
+  busyLevel   Int           @default(0)
+  comment     String        @default("")
+  location    EntryLocation @default(HamiltonLibrary)
+  createdAt   DateTime      @default(now())
+  submittedBy String        @default("Unknown")
 }
 
 enum Role {

@@ -1,15 +1,39 @@
 'use server';
 
-import { Condition, EntryLocation, Stuff } from '@prisma/client';
+import { Condition, EntryLocation, Role, Stuff } from '@prisma/client';
 import { hash } from 'bcrypt';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { auth } from './auth';
 import { prisma } from './prisma';
+
+const requireAdmin = async () => {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error('You must be logged in.');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: session.user.email,
+    },
+  });
+
+  if (!user || user.role !== Role.ADMIN) {
+    throw new Error('You must be an admin to perform this action.');
+  }
+
+  return user;
+};
 
 /**
  * Adds an entry into the database.
  * @param entry, an object with the following properties: location, busyLevel, comment.
  */
 export async function submitUpdate(entry: { location: string; busyLevel: number; comment?: string }) {
+  const session = await auth();
+
   const validLocations = Object.values(EntryLocation);
 
   if (!validLocations.includes(entry.location as EntryLocation)) {
@@ -27,11 +51,100 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
       location,
       busyLevel: entry.busyLevel,
       comment: entry.comment ?? '',
+      submittedBy: session?.user?.email ?? 'Unknown',
     },
   });
 
-  // After adding, redirect to the pulse feed
+  revalidatePath('/pulse-feed');
+  revalidatePath('/map-view');
+  revalidatePath('/locations');
+  revalidatePath('/locations/[slug]', 'page');
+  revalidatePath('/admin');
+
   redirect('/pulse-feed');
+}
+
+/**
+ * Deletes a pulse submission from the admin page.
+ */
+export async function deletePulseSubmission(formData: FormData) {
+  await requireAdmin();
+
+  const id = Number(formData.get('id'));
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid submission id.');
+  }
+
+  await prisma.entry.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/pulse-feed');
+  revalidatePath('/map-view');
+  revalidatePath('/locations');
+  revalidatePath('/locations/[slug]', 'page');
+}
+
+/**
+ * Updates a user's role from the admin page.
+ */
+export async function updateUserRole(formData: FormData) {
+  const currentAdmin = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+  const role = formData.get('role');
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid user id.');
+  }
+
+  if (role !== Role.USER && role !== Role.ADMIN) {
+    throw new Error('Invalid role.');
+  }
+
+  if (id === currentAdmin.id && role !== Role.ADMIN) {
+    throw new Error('You cannot remove your own admin role.');
+  }
+
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      role,
+    },
+  });
+
+  revalidatePath('/admin');
+}
+
+/**
+ * Deletes a user from the admin page.
+ */
+export async function deleteUser(formData: FormData) {
+  const currentAdmin = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid user id.');
+  }
+
+  if (id === currentAdmin.id) {
+    throw new Error('You cannot delete your own admin account.');
+  }
+
+  await prisma.user.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath('/admin');
 }
 
 /**
@@ -58,7 +171,6 @@ export async function addStuff(stuff: { name: string; quantity: number; owner: s
     },
   });
 
-  // After adding, redirect to the list page
   redirect('/list');
 }
 
@@ -77,7 +189,6 @@ export async function editStuff(stuff: Stuff) {
     },
   });
 
-  // After updating, redirect to the list page
   redirect('/list');
 }
 
@@ -90,7 +201,6 @@ export async function deleteStuff(id: number) {
     where: { id },
   });
 
-  // After deleting, redirect to the list page
   redirect('/list');
 }
 
