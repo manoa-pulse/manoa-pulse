@@ -46,30 +46,30 @@ const SignUp = () => {
     setErrorMessage('');
     setIsSubmitting(true);
 
-    try {
-      await createUser(data);
+    const createUserResult = await createUser({
+      email: data.email,
+      password: data.password,
+    });
 
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: data.email,
-        password: data.password,
-      });
-
-      if (result?.error) {
-        setErrorMessage('Account was created, but automatic sign-in failed. Please sign in manually.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      router.push('/');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to create account. Please try again.',
-      );
+    if (!createUserResult.success) {
+      setErrorMessage(createUserResult.error ?? 'Unable to create account. Please try again.');
       setIsSubmitting(false);
+      return;
     }
+
+    const signInResult = await signIn('credentials', {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
+
+    if (signInResult?.error) {
+      setErrorMessage('Account was created, but automatic sign-in failed. Please sign in manually.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.push('/');
   };
 
   return (

@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Alert, Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 
 /** The sign in page. */
 const SignIn = () => {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,7 +38,7 @@ const SignIn = () => {
       return;
     }
 
-    window.location.href = '/pulse-feed';
+    router.push('/pulse-feed');
   };
 
   return (
