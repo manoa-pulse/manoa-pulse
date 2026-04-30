@@ -1,7 +1,7 @@
 'use server';
 
 import { Condition, EntryLocation, Role, Stuff } from '@prisma/client';
-import { hash } from 'bcrypt';
+import bcrypt, { hash } from 'bcrypt';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { auth } from './auth';
@@ -209,6 +209,16 @@ export async function deleteStuff(id: number) {
  * @param credentials, an object with the following properties: email, password.
  */
 export async function createUser(credentials: { email: string; password: string }) {
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      email: credentials.email,
+    },
+  });
+
+  if (existingUser) {
+    throw new Error('An account with this email already exists.');
+  }
+
   const password = await hash(credentials.password, 10);
 
   await prisma.user.create({
@@ -221,13 +231,35 @@ export async function createUser(credentials: { email: string; password: string 
 
 /**
  * Changes the password of an existing user in the database.
- * @param credentials, an object with the following properties: email, password.
+ * @param credentials, an object with the following properties: email, oldpassword, password.
  */
-export async function changePassword(credentials: { email: string; password: string }) {
+export async function changePassword(credentials: {
+  email: string;
+  oldpassword: string;
+  password: string;
+}) {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: credentials.email,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User account not found.');
+  }
+
+  const oldPasswordMatches = await bcrypt.compare(credentials.oldpassword, user.password);
+
+  if (!oldPasswordMatches) {
+    throw new Error('Current password is incorrect.');
+  }
+
   const password = await hash(credentials.password, 10);
 
   await prisma.user.update({
-    where: { email: credentials.email },
+    where: {
+      email: credentials.email,
+    },
     data: {
       password,
     },

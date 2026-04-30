@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSession } from 'next-auth/react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import swal from 'sweetalert';
-import { Card, Col, Container, Button, Form, Row } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Button, Form, Row } from 'react-bootstrap';
 import { changePassword } from '@/lib/dbActions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
@@ -20,6 +21,8 @@ type ChangePasswordForm = {
 const ChangePassword = () => {
   const { data: session, status } = useSession();
   const email = session?.user?.email || '';
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validationSchema = Yup.object().shape({
     oldpassword: Yup.string().required('Current password is required'),
@@ -42,11 +45,24 @@ const ChangePassword = () => {
   });
 
   const onSubmit = async (data: ChangePasswordForm) => {
-    await changePassword({ email, ...data });
-    await swal('Password Changed', 'Your password has been changed', 'success', {
-      timer: 2000,
-    });
-    reset();
+    setErrorMessage('');
+    setIsSubmitting(true);
+
+    try {
+      await changePassword({ email, ...data });
+      await swal('Password Changed', 'Your password has been changed', 'success', {
+        timer: 2000,
+      });
+      reset();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change password. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (status === 'loading') {
@@ -111,6 +127,12 @@ const ChangePassword = () => {
                   </p>
                 </div>
 
+                {errorMessage && (
+                  <Alert variant="danger" className="rounded-4">
+                    {errorMessage}
+                  </Alert>
+                )}
+
                 <Form onSubmit={handleSubmit(onSubmit)}>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Current Password</Form.Label>
@@ -155,19 +177,23 @@ const ChangePassword = () => {
                     <Col>
                       <Button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-100 rounded-pill fw-semibold py-3 border-0"
                         style={{
                           backgroundColor: '#0b5d3b',
                         }}
                       >
-                        Update
+                        {isSubmitting ? 'Updating...' : 'Update'}
                       </Button>
                     </Col>
 
                     <Col>
                       <Button
                         type="button"
-                        onClick={() => reset()}
+                        onClick={() => {
+                          reset();
+                          setErrorMessage('');
+                        }}
                         variant="light"
                         className="w-100 rounded-pill fw-semibold py-3 shadow-sm"
                       >

@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
-import { Card, Col, Container, Button, Form, Row } from 'react-bootstrap';
+import { Alert, Card, Col, Container, Button, Form, Row } from 'react-bootstrap';
 import { createUser } from '@/lib/dbActions';
 
 type SignUpForm = {
@@ -16,6 +18,10 @@ type SignUpForm = {
 
 /** The sign up page. */
 const SignUp = () => {
+  const router = useRouter();
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const validationSchema = Yup.object().shape({
     email: Yup.string().required('Email is required').email('Email is invalid'),
     password: Yup.string()
@@ -37,13 +43,33 @@ const SignUp = () => {
   });
 
   const onSubmit = async (data: SignUpForm) => {
-    await createUser(data);
+    setErrorMessage('');
+    setIsSubmitting(true);
 
-    await signIn('credentials', {
-      callbackUrl: '/',
-      email: data.email,
-      password: data.password,
-    });
+    try {
+      await createUser(data);
+
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
+
+      if (result?.error) {
+        setErrorMessage('Account was created, but automatic sign-in failed. Please sign in manually.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push('/');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to create account. Please try again.',
+      );
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -104,6 +130,12 @@ const SignUp = () => {
                   </p>
                 </div>
 
+                {errorMessage && (
+                  <Alert variant="danger" className="rounded-4">
+                    {errorMessage}
+                  </Alert>
+                )}
+
                 <Form onSubmit={handleSubmit(onSubmit)}>
                   <Form.Group className="mb-3">
                     <Form.Label className="fw-semibold">Email</Form.Label>
@@ -113,7 +145,7 @@ const SignUp = () => {
                       className={`form-control form-control-lg rounded-4 ${
                         errors.email ? 'is-invalid' : ''
                       }`}
-                      placeholder="your-email@hawaii.edu"
+                      placeholder="your-email@email.edu"
                     />
                     <div className="invalid-feedback">{errors.email?.message}</div>
                   </Form.Group>
@@ -148,19 +180,23 @@ const SignUp = () => {
                     <Col>
                       <Button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-100 rounded-pill fw-semibold py-3 border-0"
                         style={{
                           backgroundColor: '#0b5d3b',
                         }}
                       >
-                        Register
+                        {isSubmitting ? 'Creating...' : 'Register'}
                       </Button>
                     </Col>
 
                     <Col>
                       <Button
                         type="button"
-                        onClick={() => reset()}
+                        onClick={() => {
+                          reset();
+                          setErrorMessage('');
+                        }}
                         variant="light"
                         className="w-100 rounded-pill fw-semibold py-3 shadow-sm"
                       >
