@@ -9,9 +9,11 @@ import { LOCATION_LABELS } from '@/lib/locationLabels';
 type MapHeatProps = {
   data: {
     location: string;
-    busyLevel: number;
-    occupancy: number;
-    dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA';
+    busyLevel: number | null;
+    occupancy: number | null;
+    dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS';
+    isOpen?: boolean;
+    hoursStatus?: string;
   }[];
 };
 
@@ -25,25 +27,53 @@ const LOCATION_HREFS: Record<string, string> = {
   POST2ndFloor: '/locations/post-2nd-floor',
 };
 
-const getSourceBorderStyle = (dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA') => {
+const getSourceBorderStyle = (
+  dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS',
+) => {
   if (dataSource === 'LIVE') {
     return {
       border: '4px solid #0b5d3b',
-      boxShadow: '0 0 0 2px rgba(11, 93, 59, 0.12), 0 10px 24px rgba(11, 93, 59, 0.18)',
+      boxShadow:
+        '0 0 0 2px rgba(11, 93, 59, 0.12), 0 10px 24px rgba(11, 93, 59, 0.18)',
     };
   }
 
   if (dataSource === 'PREDICTED') {
     return {
       border: '4px solid #d4a017',
-      boxShadow: '0 0 0 2px rgba(212, 160, 23, 0.12), 0 10px 24px rgba(212, 160, 23, 0.18)',
+      boxShadow:
+        '0 0 0 2px rgba(212, 160, 23, 0.12), 0 10px 24px rgba(212, 160, 23, 0.18)',
+    };
+  }
+
+  if (dataSource === 'AFTER_HOURS') {
+    return {
+      border: '4px dashed #6c757d',
+      boxShadow:
+        '0 0 0 2px rgba(108, 117, 125, 0.12), 0 10px 24px rgba(108, 117, 125, 0.14)',
     };
   }
 
   return {
     border: '4px solid #6c757d',
-    boxShadow: '0 0 0 2px rgba(108, 117, 125, 0.12), 0 10px 24px rgba(108, 117, 125, 0.18)',
+    boxShadow:
+      '0 0 0 2px rgba(108, 117, 125, 0.12), 0 10px 24px rgba(108, 117, 125, 0.18)',
   };
+};
+
+const getZoneBackgroundColor = (
+  busyLevel: number | null,
+  dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS',
+) => {
+  if (dataSource === 'AFTER_HOURS') {
+    return '#dee2e6';
+  }
+
+  if (busyLevel === null) {
+    return '#dee2e6';
+  }
+
+  return getHeatColor(busyLevel);
 };
 
 const MapHeat = ({ data }: MapHeatProps) => (
@@ -74,9 +104,11 @@ const MapHeat = ({ data }: MapHeatProps) => (
           return null;
         }
 
-        const percent = entry.occupancy ?? Math.round(entry.busyLevel * 10);
         const label = LOCATION_LABELS[entry.location] ?? entry.location;
         const href = LOCATION_HREFS[entry.location];
+        const isAfterHours = entry.dataSource === 'AFTER_HOURS';
+        const percent = entry.occupancy ?? 0;
+        const backgroundColor = getZoneBackgroundColor(entry.busyLevel, entry.dataSource);
         const sourceBorderStyle = getSourceBorderStyle(entry.dataSource);
 
         const heatZone = (
@@ -87,9 +119,9 @@ const MapHeat = ({ data }: MapHeatProps) => (
               top: `${zone.y}%`,
               width: `${zone.width}%`,
               height: `${zone.height}%`,
-              backgroundColor: getHeatColor(entry.busyLevel),
+              backgroundColor,
               borderRadius: '16px',
-              opacity: 0.78,
+              opacity: isAfterHours ? 0.7 : 0.82,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -106,7 +138,12 @@ const MapHeat = ({ data }: MapHeatProps) => (
           >
             <div>
               <div>{label}</div>
-              <div>{percent}%</div>
+
+              {isAfterHours ? (
+                <div className="small mt-1">AFTER HOURS</div>
+              ) : (
+                <div>{percent}%</div>
+              )}
             </div>
           </div>
         );
