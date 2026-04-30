@@ -195,7 +195,7 @@ const LocationDetailPage = async ({
                   </p>
                 </div>
 
-                <Link href="/submit" className="text-decoration-none">
+                <Link href={`/submit?location=${locationKey}`} className="text-decoration-none">
                   <Button
                     variant="light"
                     className="w-100 rounded-pill fw-bold py-3"
