@@ -17,6 +17,27 @@ const getStatusColor = (occupancy: number) => {
   return 'text-danger';
 };
 
+const getDataSourceLabel = (dataSource?: 'LIVE' | 'PREDICTED' | 'NO_DATA') => {
+  if (dataSource === 'LIVE') {
+    return {
+      label: '🔴 LIVE UPDATE',
+      description: 'Based on pulse updates submitted within the last hour.',
+    };
+  }
+
+  if (dataSource === 'PREDICTED') {
+    return {
+      label: '🟡 PREDICTED STATUS',
+      description: 'Based on historical prediction data for this time of day.',
+    };
+  }
+
+  return {
+    label: '⚪ NO RECENT DATA',
+    description: 'No recent live updates or prediction data are available.',
+  };
+};
+
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -42,6 +63,7 @@ const LocationDetailPage = async ({
     getPulseData(),
     getHourlyPulseData(),
   ]);
+
   const locationPulse = pulseData.find((item) => item.location === locationKey);
   const hourlyAverages =
     hourlyPulseData.find((item) => item.location === locationKey)?.hours ?? [];
@@ -49,6 +71,7 @@ const LocationDetailPage = async ({
   const occupancy = locationPulse?.occupancy ?? 0;
   const status = getStatus(occupancy);
   const statusColor = getStatusColor(occupancy);
+  const dataSourceInfo = getDataSourceLabel(locationPulse?.dataSource);
 
   return (
     <main className="bg-light py-4">
@@ -73,15 +96,19 @@ const LocationDetailPage = async ({
                 className="px-3 py-2 rounded-pill small fw-semibold"
                 style={{ backgroundColor: 'rgba(255,255,255,0.18)' }}
               >
-                🔴 LIVE STATUS
+                {dataSourceInfo.label}
               </span>
 
               <h1 className="display-2 fw-bold mt-4 mb-4">
                 {config.label}
               </h1>
 
-              <p className="fs-4 mb-0" style={{ maxWidth: '560px' }}>
+              <p className="fs-4 mb-3" style={{ maxWidth: '560px' }}>
                 {config.description}
+              </p>
+
+              <p className="mb-0" style={{ maxWidth: '560px', opacity: 0.9 }}>
+                {dataSourceInfo.description}
               </p>
             </Col>
 

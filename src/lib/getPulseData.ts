@@ -1,4 +1,6 @@
+import { EntryLocation } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { unstable_noStore } from 'next/cache';
 
 export type PulseData = {
   location: string;
@@ -6,6 +8,7 @@ export type PulseData = {
   occupancy: number;
   lastUpdated: string | null;
   samples: number;
+  dataSource: 'LIVE' | 'PREDICTED' | 'NO_DATA';
 };
 
 export type HourlyPulseData = {
@@ -25,6 +28,8 @@ export type LocationHourlyPulseData = {
 const HAWAII_TIME_ZONE = 'Pacific/Honolulu';
 export const HISTORICAL_START_HOUR = 7;
 export const HISTORICAL_END_HOUR = 22;
+
+const ALL_LOCATIONS = Object.values(EntryLocation);
 
 const getHawaiiHour = (date: Date) => {
   const hour = new Intl.DateTimeFormat('en-US', {
@@ -62,49 +67,166 @@ export const formatHourLabel = (hour: number) => {
   }).format(date);
 };
 
+const getClosestHourData = (
+  hours: Record<number, { busyLevels: number[]; latestDate: Date | null }>,
+  targetHour: number,
+) => {
+  const availableHours = Object.keys(hours).map(Number);
+
+  if (availableHours.length === 0) {
+    return null;
+  }
+
+  const closestHour = availableHours.reduce((closest, current) => {
+    const closestDistance = Math.abs(closest - targetHour);
+    const currentDistance = Math.abs(current - targetHour);
+
+    return currentDistance < closestDistance ? current : closest;
+  });
+
+  return hours[closestHour];
+};
+
 export const getPulseData = async (): Promise<PulseData[]> => {
-  const raw = await prisma.entry.findMany({
+  unstable_noStore();
+
+  const oneHourAgo = new Date();
+  oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+
+  const currentHistoricalHour = getCurrentHistoricalHour();
+
+  const recentEntries = await prisma.entry.findMany({
+    where: {
+      createdAt: {
+        gte: oneHourAgo,
+      },
+    },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
-  const grouped: Record<string, { busyLevels: number[]; latestDate: Date | null }> = {};
+  const historicalEntries = await prisma.entry.findMany({
+    where: {
+      createdAt: {
+        lt: oneHourAgo,
+      },
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
 
-  raw.forEach((entry) => {
+  const recentGrouped: Record<
+    string,
+    {
+      busyLevels: number[];
+      latestDate: Date | null;
+    }
+  > = {};
+
+  const predictionGrouped: Record<
+    string,
+    Record<number, { busyLevels: number[]; latestDate: Date | null }>
+  > = {};
+
+  ALL_LOCATIONS.forEach((location) => {
+    recentGrouped[location] = {
+      busyLevels: [],
+      latestDate: null,
+    };
+
+    predictionGrouped[location] = {};
+  });
+
+  recentEntries.forEach((entry) => {
     const location = entry.location;
 
-    if (!grouped[location]) {
-      grouped[location] = {
+    recentGrouped[location].busyLevels.push(entry.busyLevel);
+
+    const currentLatestDate = recentGrouped[location].latestDate;
+
+    if (currentLatestDate === null || entry.createdAt > currentLatestDate) {
+      recentGrouped[location].latestDate = entry.createdAt;
+    }
+  });
+
+  historicalEntries.forEach((entry) => {
+    const location = entry.location;
+    const hour = getHawaiiHour(entry.createdAt);
+
+    if (hour < HISTORICAL_START_HOUR || hour > HISTORICAL_END_HOUR) {
+      return;
+    }
+
+    if (!predictionGrouped[location][hour]) {
+      predictionGrouped[location][hour] = {
         busyLevels: [],
         latestDate: null,
       };
     }
 
-    grouped[location].busyLevels.push(entry.busyLevel);
+    predictionGrouped[location][hour].busyLevels.push(entry.busyLevel);
 
-    const currentLatestDate = grouped[location].latestDate;
+    const currentLatestDate = predictionGrouped[location][hour].latestDate;
 
     if (currentLatestDate === null || entry.createdAt > currentLatestDate) {
-      grouped[location].latestDate = entry.createdAt;
+      predictionGrouped[location][hour].latestDate = entry.createdAt;
     }
   });
 
-  return Object.entries(grouped).map(([location, values]) => {
-    const averageBusyLevel =
-      values.busyLevels.reduce((sum, value) => sum + value, 0) / values.busyLevels.length;
+  return ALL_LOCATIONS.map((location) => {
+    const recentValues = recentGrouped[location];
+
+    if (recentValues.busyLevels.length > 0) {
+      const averageBusyLevel =
+        recentValues.busyLevels.reduce((sum, value) => sum + value, 0) /
+        recentValues.busyLevels.length;
+
+      return {
+        location,
+        busyLevel: averageBusyLevel,
+        occupancy: Math.round(averageBusyLevel * 10),
+        lastUpdated: recentValues.latestDate ? recentValues.latestDate.toISOString() : null,
+        samples: recentValues.busyLevels.length,
+        dataSource: 'LIVE',
+      };
+    }
+
+    const predictionValues = getClosestHourData(
+      predictionGrouped[location],
+      currentHistoricalHour,
+    );
+
+    if (predictionValues && predictionValues.busyLevels.length > 0) {
+      const predictedBusyLevel =
+        predictionValues.busyLevels.reduce((sum, value) => sum + value, 0) /
+        predictionValues.busyLevels.length;
+
+      return {
+        location,
+        busyLevel: predictedBusyLevel,
+        occupancy: Math.round(predictedBusyLevel * 10),
+        lastUpdated: null,
+        samples: predictionValues.busyLevels.length,
+        dataSource: 'PREDICTED',
+      };
+    }
 
     return {
       location,
-      busyLevel: averageBusyLevel,
-      occupancy: Math.round(averageBusyLevel * 10),
-      lastUpdated: values.latestDate ? values.latestDate.toISOString() : null,
-      samples: values.busyLevels.length,
+      busyLevel: 0,
+      occupancy: 0,
+      lastUpdated: null,
+      samples: 0,
+      dataSource: 'NO_DATA',
     };
   });
 };
 
 export const getHourlyPulseData = async (): Promise<LocationHourlyPulseData[]> => {
+  unstable_noStore();
+
   const raw = await prisma.entry.findMany({
     orderBy: {
       createdAt: 'asc',
@@ -116,16 +238,16 @@ export const getHourlyPulseData = async (): Promise<LocationHourlyPulseData[]> =
     Record<number, { busyLevels: number[]; latestDate: Date | null }>
   > = {};
 
+  ALL_LOCATIONS.forEach((location) => {
+    grouped[location] = {};
+  });
+
   raw.forEach((entry) => {
     const location = entry.location;
     const hour = getHawaiiHour(entry.createdAt);
 
     if (hour < HISTORICAL_START_HOUR || hour > HISTORICAL_END_HOUR) {
       return;
-    }
-
-    if (!grouped[location]) {
-      grouped[location] = {};
     }
 
     if (!grouped[location][hour]) {
@@ -144,9 +266,9 @@ export const getHourlyPulseData = async (): Promise<LocationHourlyPulseData[]> =
     }
   });
 
-  return Object.entries(grouped).map(([location, hours]) => ({
+  return ALL_LOCATIONS.map((location) => ({
     location,
-    hours: Object.entries(hours)
+    hours: Object.entries(grouped[location])
       .map(([hour, values]) => {
         const averageBusyLevel =
           values.busyLevels.reduce((sum, value) => sum + value, 0) /
