@@ -1,13 +1,19 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 
 /** The sign in page. */
 const SignIn = () => {
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setErrorMessage('');
+    setIsSubmitting(true);
 
     const target = event.target as typeof event.target & {
       email: { value: string };
@@ -17,11 +23,20 @@ const SignIn = () => {
     const email = target.email.value;
     const password = target.password.value;
 
-    await signIn('credentials', {
-      callbackUrl: '/pulse-feed',
+    const result = await signIn('credentials', {
+      redirect: false,
       email,
       password,
     });
+
+    setIsSubmitting(false);
+
+    if (result?.error) {
+      setErrorMessage('Invalid email or password. Please try again.');
+      return;
+    }
+
+    window.location.href = '/pulse-feed';
   };
 
   return (
@@ -82,6 +97,12 @@ const SignIn = () => {
                   </p>
                 </div>
 
+                {errorMessage && (
+                  <Alert variant="danger" className="rounded-4">
+                    {errorMessage}
+                  </Alert>
+                )}
+
                 <Form method="post" onSubmit={handleSubmit}>
                   <Form.Group controlId="formBasicEmail" className="mb-3">
                     <Form.Label className="fw-semibold">Email</Form.Label>
@@ -89,7 +110,7 @@ const SignIn = () => {
                       name="email"
                       type="email"
                       className="form-control form-control-lg rounded-4"
-                      placeholder="john@foo.com"
+                      placeholder="your-email@email.com"
                       required
                     />
                   </Form.Group>
@@ -107,12 +128,13 @@ const SignIn = () => {
 
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="w-100 rounded-pill fw-semibold py-3 border-0"
                     style={{
                       backgroundColor: '#0b5d3b',
                     }}
                   >
-                    Sign In
+                    {isSubmitting ? 'Signing in...' : 'Sign In'}
                   </Button>
                 </Form>
               </div>
