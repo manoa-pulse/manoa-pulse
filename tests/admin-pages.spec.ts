@@ -52,10 +52,18 @@ test('test access to admin page', async ({ getUserPage }) => {
   await nav.getByRole('link', { name: 'Admin', exact: true }).click();
 
   await expect(
-    adminPage.getByRole('heading', { name: 'List Stuff Admin', exact: true }),
+    adminPage.getByRole('heading', { name: 'Manage Manoa Pulse', exact: true }),
   ).toBeVisible({ timeout: 5000 });
 
   await expect(
-    adminPage.getByRole('heading', { name: 'List Users Admin', exact: true }),
+    adminPage.getByRole('heading', { name: 'Recent Pulse Submissions', exact: true }),
+  ).toBeVisible({ timeout: 5000 });
+
+  await expect(
+    adminPage.getByRole('heading', { name: 'User Management', exact: true }),
+  ).toBeVisible({ timeout: 5000 });
+
+  await expect(
+    adminPage.getByRole('button', { name: /show test users|hide test users/i }),
   ).toBeVisible({ timeout: 5000 });
 });
