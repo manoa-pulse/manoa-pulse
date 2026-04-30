@@ -48,21 +48,24 @@ const ChangePassword = () => {
     setErrorMessage('');
     setIsSubmitting(true);
 
-    try {
-      await changePassword({ email, ...data });
-      await swal('Password Changed', 'Your password has been changed', 'success', {
-        timer: 2000,
-      });
-      reset();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : 'Unable to change password. Please try again.',
-      );
-    } finally {
-      setIsSubmitting(false);
+    const result = await changePassword({
+      email,
+      oldpassword: data.oldpassword,
+      password: data.password,
+    });
+
+    setIsSubmitting(false);
+
+    if (!result.success) {
+      setErrorMessage(result.error ?? 'Unable to change password. Please try again.');
+      return;
     }
+
+    await swal('Password Changed', 'Your password has been changed', 'success', {
+      timer: 2000,
+    });
+
+    reset();
   };
 
   if (status === 'loading') {
