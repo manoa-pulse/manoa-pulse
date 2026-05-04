@@ -1,15 +1,39 @@
 'use server';
 
-import { Condition, EntryLocation, Stuff } from '@prisma/client';
-import { hash } from 'bcrypt';
+import { Condition, EntryLocation, Role, Stuff } from '@prisma/client';
+import bcrypt, { hash } from 'bcrypt';
+import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { auth } from './auth';
 import { prisma } from './prisma';
+
+const requireAdmin = async () => {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error('You must be logged in.');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: session.user.email,
+    },
+  });
+
+  if (!user || user.role !== Role.ADMIN) {
+    throw new Error('You must be an admin to perform this action.');
+  }
+
+  return user;
+};
 
 /**
  * Adds an entry into the database.
  * @param entry, an object with the following properties: location, busyLevel, comment.
  */
-export async function submitUpdate(entry: { location: string; busyLevel: number; comment: string }) {
+export async function submitUpdate(entry: { location: string; busyLevel: number; comment?: string }) {
+  const session = await auth();
+
   const validLocations = Object.values(EntryLocation);
 
   if (!validLocations.includes(entry.location as EntryLocation)) {
@@ -26,12 +50,101 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
     data: {
       location,
       busyLevel: entry.busyLevel,
-      comment: entry.comment,
+      comment: entry.comment ?? '',
+      submittedBy: session?.user?.email ?? 'Unknown',
     },
   });
 
-  // After adding, redirect to the pulse feed
+  revalidatePath('/pulse-feed');
+  revalidatePath('/map-view');
+  revalidatePath('/locations');
+  revalidatePath('/locations/[slug]', 'page');
+  revalidatePath('/admin');
+
   redirect('/pulse-feed');
+}
+
+/**
+ * Deletes a pulse submission from the admin page.
+ */
+export async function deletePulseSubmission(formData: FormData) {
+  await requireAdmin();
+
+  const id = Number(formData.get('id'));
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid submission id.');
+  }
+
+  await prisma.entry.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/pulse-feed');
+  revalidatePath('/map-view');
+  revalidatePath('/locations');
+  revalidatePath('/locations/[slug]', 'page');
+}
+
+/**
+ * Updates a user's role from the admin page.
+ */
+export async function updateUserRole(formData: FormData) {
+  const currentAdmin = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+  const role = formData.get('role');
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid user id.');
+  }
+
+  if (role !== Role.USER && role !== Role.ADMIN) {
+    throw new Error('Invalid role.');
+  }
+
+  if (id === currentAdmin.id && role !== Role.ADMIN) {
+    throw new Error('You cannot remove your own admin role.');
+  }
+
+  await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      role,
+    },
+  });
+
+  revalidatePath('/admin');
+}
+
+/**
+ * Deletes a user from the admin page.
+ */
+export async function deleteUser(formData: FormData) {
+  const currentAdmin = await requireAdmin();
+
+  const id = Number(formData.get('id'));
+
+  if (!Number.isInteger(id)) {
+    throw new Error('Invalid user id.');
+  }
+
+  if (id === currentAdmin.id) {
+    throw new Error('You cannot delete your own admin account.');
+  }
+
+  await prisma.user.delete({
+    where: {
+      id,
+    },
+  });
+
+  revalidatePath('/admin');
 }
 
 /**
@@ -58,7 +171,6 @@ export async function addStuff(stuff: { name: string; quantity: number; owner: s
     },
   });
 
-  // After adding, redirect to the list page
   redirect('/list');
 }
 
@@ -77,7 +189,6 @@ export async function editStuff(stuff: Stuff) {
     },
   });
 
-  // After updating, redirect to the list page
   redirect('/list');
 }
 
@@ -90,7 +201,6 @@ export async function deleteStuff(id: number) {
     where: { id },
   });
 
-  // After deleting, redirect to the list page
   redirect('/list');
 }
 
@@ -99,27 +209,90 @@ export async function deleteStuff(id: number) {
  * @param credentials, an object with the following properties: email, password.
  */
 export async function createUser(credentials: { email: string; password: string }) {
-  const password = await hash(credentials.password, 10);
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: credentials.email,
+      },
+    });
 
-  await prisma.user.create({
-    data: {
-      email: credentials.email,
-      password,
-    },
-  });
+    if (existingUser) {
+      return {
+        success: false,
+        error: 'An account with this email already exists.',
+      };
+    }
+
+    const password = await hash(credentials.password, 10);
+
+    await prisma.user.create({
+      data: {
+        email: credentials.email,
+        password,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch {
+    return {
+      success: false,
+      error: 'Something went wrong. Please try again.',
+    };
+  }
 }
 
 /**
  * Changes the password of an existing user in the database.
- * @param credentials, an object with the following properties: email, password.
+ * @param credentials, an object with the following properties: email, oldpassword, password.
  */
-export async function changePassword(credentials: { email: string; password: string }) {
-  const password = await hash(credentials.password, 10);
+export async function changePassword(credentials: {
+  email: string;
+  oldpassword: string;
+  password: string;
+}) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email: credentials.email,
+      },
+    });
 
-  await prisma.user.update({
-    where: { email: credentials.email },
-    data: {
-      password,
-    },
-  });
+    if (!user) {
+      return {
+        success: false,
+        error: 'User account not found.',
+      };
+    }
+
+    const oldPasswordMatches = await bcrypt.compare(credentials.oldpassword, user.password);
+
+    if (!oldPasswordMatches) {
+      return {
+        success: false,
+        error: 'Current password is incorrect.',
+      };
+    }
+
+    const password = await hash(credentials.password, 10);
+
+    await prisma.user.update({
+      where: {
+        email: credentials.email,
+      },
+      data: {
+        password,
+      },
+    });
+
+    return {
+      success: true,
+    };
+  } catch {
+    return {
+      success: false,
+      error: 'Unable to change password. Please try again.',
+    };
+  }
 }

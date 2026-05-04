@@ -37,25 +37,31 @@ test('test access to admin page', async ({ getUserPage }) => {
     nav.getByRole('link', { name: 'Admin', exact: true }),
   ).toBeVisible({ timeout: 5000 });
 
-  await nav.getByRole('link', { name: 'Submit Update', exact: true }).click();
+  await adminPage.goto('http://localhost:3000/pulse-feed');
+
+  await expect(adminPage).toHaveURL(/\/pulse-feed/);
 
   await expect(
-    adminPage.getByRole('heading', { name: 'Submit Update', exact: true }),
+    adminPage.getByText('campus study, dining, and fitness locations', { exact: false }),
   ).toBeVisible({ timeout: 5000 });
 
-  await nav.getByRole('link', { name: 'Pulse Feed', exact: true }).click();
+  await adminPage.goto('http://localhost:3000/admin');
+
+  await expect(adminPage).toHaveURL(/\/admin/);
 
   await expect(
-    adminPage.getByRole('heading', { name: 'The Pulse Feed', exact: true }),
-  ).toBeVisible({ timeout: 5000 });
-
-  await nav.getByRole('link', { name: 'Admin', exact: true }).click();
-
-  await expect(
-    adminPage.getByRole('heading', { name: 'List Stuff Admin', exact: true }),
+    adminPage.getByRole('heading', { name: 'Manage Manoa Pulse', exact: true }),
   ).toBeVisible({ timeout: 5000 });
 
   await expect(
-    adminPage.getByRole('heading', { name: 'List Users Admin', exact: true }),
+    adminPage.getByRole('heading', { name: 'Recent Pulse Submissions', exact: true }),
+  ).toBeVisible({ timeout: 5000 });
+
+  await expect(
+    adminPage.getByRole('heading', { name: 'User Management', exact: true }),
+  ).toBeVisible({ timeout: 5000 });
+
+  await expect(
+    adminPage.getByRole('button', { name: /show test users|hide test users/i }),
   ).toBeVisible({ timeout: 5000 });
 });

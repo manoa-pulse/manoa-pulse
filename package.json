@@ -10,6 +10,7 @@
   "lint": "eslint",
   "postinstall": "prisma generate",
   "seed": "npx prisma db seed",
+  "seed:random": "SEED_RANDOM_HISTORY=true npx prisma db seed",
   "playwright": "npx playwright test"
 },
   "dependencies": {

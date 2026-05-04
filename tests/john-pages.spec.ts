@@ -39,9 +39,11 @@ test('can authenticate a specific user', async ({ getUserPage }) => {
     customUserPage.getByRole('heading', { name: 'Submit Update', exact: true }),
   ).toBeVisible({ timeout: 5000 });
 
-  await nav.getByRole('link', { name: 'Pulse Feed', exact: true }).click();
+  await customUserPage.goto('http://localhost:3000/pulse-feed');
+
+  await expect(customUserPage).toHaveURL(/\/pulse-feed/);
 
   await expect(
-    customUserPage.getByRole('heading', { name: 'The Pulse Feed', exact: true }),
+    customUserPage.getByText('campus study, dining, and fitness locations', { exact: false }),
   ).toBeVisible({ timeout: 5000 });
 });

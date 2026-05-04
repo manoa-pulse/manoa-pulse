@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { redirect, useSearchParams } from 'next/navigation';
 import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import swal from 'sweetalert';
-import { redirect } from 'next/navigation';
 import * as Yup from 'yup';
 import { submitUpdate } from '@/lib/dbActions';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -15,6 +15,18 @@ import { LOCATION_CONFIG } from '@/lib/locationConfig';
 
 type SubmitUpdateData = Yup.InferType<typeof UpdateStuffSchema>;
 type LocationKey = keyof typeof LOCATION_CONFIG;
+
+const isValidLocationKey = (value: string | null): value is LocationKey => (
+  value !== null && value in LOCATION_CONFIG
+);
+
+const getDefaultLocation = (locationParam: string | null): LocationKey => {
+  if (isValidLocationKey(locationParam)) {
+    return locationParam;
+  }
+
+  return 'HamiltonLibrary';
+};
 
 const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
   await submitUpdate(data);
@@ -26,8 +38,11 @@ const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
 
 const SubmitUpdateForm: React.FC = () => {
   const { status } = useSession();
+  const searchParams = useSearchParams();
+  const defaultLocation = getDefaultLocation(searchParams.get('location'));
+
   const [busyLevelValue, setBusyLevelValue] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState<LocationKey>('HamiltonLibrary');
+  const [selectedLocation, setSelectedLocation] = useState<LocationKey>(defaultLocation);
 
   const {
     register,
@@ -37,7 +52,7 @@ const SubmitUpdateForm: React.FC = () => {
   } = useForm<SubmitUpdateData>({
     resolver: yupResolver(UpdateStuffSchema),
     defaultValues: {
-      location: 'HamiltonLibrary',
+      location: defaultLocation,
       busyLevel: 1,
       comment: '',
     },
@@ -68,11 +83,11 @@ const SubmitUpdateForm: React.FC = () => {
 
   const handleReset = () => {
     reset({
-      location: 'HamiltonLibrary',
+      location: defaultLocation,
       busyLevel: 1,
       comment: '',
     });
-    setSelectedLocation('HamiltonLibrary');
+    setSelectedLocation(defaultLocation);
     setBusyLevelValue(1);
   };
 
@@ -124,7 +139,7 @@ const SubmitUpdateForm: React.FC = () => {
                 </Card>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>How busy is it? (1–10)</Form.Label>
+                  <Form.Label>How busy is it? (1-10)</Form.Label>
 
                   <input
                     type="range"

@@ -13,15 +13,21 @@ import {
 import { LOCATION_LABELS } from '@/lib/locationLabels';
 import type { PulseData } from '@/lib/getPulseData';
 
+type DataSource = 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS';
+
 type Spot = {
   location: string;
   category: 'STUDY' | 'DINING' | 'FITNESS';
-  occupancy: number;
+  occupancy: number | null;
   updated: string;
-  level: 'LOW' | 'MEDIUM' | 'HIGH';
+  level: 'LOW' | 'MEDIUM' | 'HIGH' | 'AFTER_HOURS';
   borderColor: string;
   badgeBg: string;
   badgeColor: string;
+  dataSource: DataSource;
+  isOpen: boolean;
+  hoursStatus: string;
+  todayHours: string;
   href?: string;
 };
 
@@ -49,8 +55,19 @@ const LOCATION_HREFS: Record<string, string> = {
   POST2ndFloor: '/locations/post-2nd-floor',
 };
 
-const getVisualStyle = (occupancy: number) => {
-  if (occupancy <= 30) {
+const getVisualStyle = (occupancy: number | null, dataSource: DataSource) => {
+  if (dataSource === 'AFTER_HOURS') {
+    return {
+      level: 'AFTER_HOURS' as const,
+      borderColor: '#6c757d',
+      badgeBg: '#e9ecef',
+      badgeColor: '#6c757d',
+    };
+  }
+
+  const safeOccupancy = occupancy ?? 0;
+
+  if (safeOccupancy <= 30) {
     return {
       level: 'LOW' as const,
       borderColor: '#8ce9a9',
@@ -59,7 +76,7 @@ const getVisualStyle = (occupancy: number) => {
     };
   }
 
-  if (occupancy <= 70) {
+  if (safeOccupancy <= 70) {
     return {
       level: 'MEDIUM' as const,
       borderColor: '#f6c343',
@@ -76,9 +93,45 @@ const getVisualStyle = (occupancy: number) => {
   };
 };
 
-const formatLastUpdated = (lastUpdated: string | null) => {
+const getDataSourceStyle = (dataSource: DataSource) => {
+  if (dataSource === 'LIVE') {
+    return {
+      label: 'LIVE UPDATE',
+      backgroundColor: '#dff8e7',
+      color: '#198754',
+    };
+  }
+
+  if (dataSource === 'PREDICTED') {
+    return {
+      label: 'PREDICTED',
+      backgroundColor: '#fff3cd',
+      color: '#b58105',
+    };
+  }
+
+  if (dataSource === 'AFTER_HOURS') {
+    return {
+      label: 'AFTER HOURS',
+      backgroundColor: '#e9ecef',
+      color: '#6c757d',
+    };
+  }
+
+  return {
+    label: 'NO DATA',
+    backgroundColor: '#e9ecef',
+    color: '#6c757d',
+  };
+};
+
+const formatLastUpdated = (lastUpdated: string | null, dataSource: DataSource, hoursStatus: string) => {
+  if (dataSource === 'AFTER_HOURS') {
+    return hoursStatus;
+  }
+
   if (!lastUpdated) {
-    return 'No updates yet';
+    return 'No live update';
   }
 
   const updatedDate = new Date(lastUpdated);
@@ -126,9 +179,13 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
       location: item.location,
       category: LOCATION_CATEGORIES[item.location] ?? 'STUDY',
       occupancy: item.occupancy,
-      updated: formatLastUpdated(item.lastUpdated),
+      updated: formatLastUpdated(item.lastUpdated, item.dataSource, item.hoursStatus),
+      dataSource: item.dataSource,
+      isOpen: item.isOpen,
+      hoursStatus: item.hoursStatus,
+      todayHours: item.todayHours,
       href: LOCATION_HREFS[item.location],
-      ...getVisualStyle(item.occupancy),
+      ...getVisualStyle(item.occupancy, item.dataSource),
     }));
   }, [pulseData]);
 
@@ -273,6 +330,8 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
               {filteredSpots.length > 0 ? (
                 filteredSpots.map((spot) => {
                   const label = LOCATION_LABELS[spot.location] ?? spot.location;
+                  const sourceStyle = getDataSourceStyle(spot.dataSource);
+                  const isAfterHours = spot.dataSource === 'AFTER_HOURS';
 
                   const cardContent = (
                     <Card
@@ -282,6 +341,7 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
                         borderLeft: `6px solid ${spot.borderColor}`,
                         transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                         cursor: spot.href ? 'pointer' : 'default',
+                        opacity: isAfterHours ? 0.82 : 1,
                       }}
                     >
                       <div className="p-4">
@@ -300,23 +360,58 @@ const PulseFeedClient = ({ pulseData }: PulseFeedClientProps) => {
                               color: spot.badgeColor,
                             }}
                           >
-                            {spot.level}
+                            {isAfterHours ? 'CLOSED' : spot.level}
                           </span>
                         </div>
 
                         <div className="mb-4">
-                          <span
-                            className="fw-bold text-success"
-                            style={{ fontSize: '4rem' }}
-                          >
-                            {String(spot.occupancy).padStart(2, '0')}%
-                          </span>
-                          <span className="text-muted fw-semibold ms-2">
-                            BUSYNESS
-                          </span>
+                          {isAfterHours ? (
+                            <>
+                              <span
+                                className="fw-bold text-secondary"
+                                style={{ fontSize: '2.7rem' }}
+                              >
+                                AFTER HOURS
+                              </span>
+                              <div className="text-muted fw-semibold mt-2">
+                                Busyness hidden while closed
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <span
+                                className="fw-bold text-success"
+                                style={{ fontSize: '4rem' }}
+                              >
+                                {String(spot.occupancy ?? 0).padStart(2, '0')}%
+                              </span>
+                              <span className="text-muted fw-semibold ms-2">
+                                BUSYNESS
+                              </span>
+                            </>
+                          )}
                         </div>
 
-                        <div className="d-flex justify-content-end text-secondary">
+                        <div className="mb-3">
+                          <p className="text-secondary small mb-0">
+                            {spot.hoursStatus}
+                          </p>
+                          <p className="text-muted small mb-0">
+                            Today: {spot.todayHours}
+                          </p>
+                        </div>
+
+                        <div className="d-flex justify-content-between align-items-center text-secondary">
+                          <span
+                            className="px-3 py-2 rounded-pill fw-semibold small"
+                            style={{
+                              backgroundColor: sourceStyle.backgroundColor,
+                              color: sourceStyle.color,
+                            }}
+                          >
+                            {sourceStyle.label}
+                          </span>
+
                           <small>{spot.updated}</small>
                         </div>
                       </div>
