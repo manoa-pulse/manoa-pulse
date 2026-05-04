@@ -96,7 +96,7 @@ const SubmitUpdateForm: React.FC = () => {
       <Row className="justify-content-center">
         <Col xs={12} md={8} lg={6}>
           <Col className="text-center">
-            <h2>Submit Update</h2>
+            <h2 className='text-success'><b>Submit Update</b></h2>
           </Col>
 
           <Card>
@@ -119,7 +119,7 @@ const SubmitUpdateForm: React.FC = () => {
 
                 <Card className="mb-3">
                   <Card.Body>
-                    <h5>{selectedLocationConfig.label}</h5>
+                    <h5 style={{color : '#0b5d3b'}}>{selectedLocationConfig.label}</h5>
                     <p className="text-muted mb-2">{selectedLocationConfig.description}</p>
                     <p className="mb-2">
                       <strong>Category:</strong> {selectedLocationConfig.category}
@@ -172,7 +172,7 @@ const SubmitUpdateForm: React.FC = () => {
                 <Form.Group className="form-group">
                   <Row className="pt-3">
                     <Col>
-                      <Button type="submit" variant="primary">
+                      <Button type="submit" variant="success">
                         Submit
                       </Button>
                     </Col>
@@ -180,7 +180,7 @@ const SubmitUpdateForm: React.FC = () => {
                       <Button
                         type="button"
                         onClick={handleReset}
-                        variant="warning"
+                        variant="danger"
                         className="float-right"
                       >
                         Reset
