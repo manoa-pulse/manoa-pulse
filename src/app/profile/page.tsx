@@ -6,11 +6,16 @@ import { getCurrentUserFavoriteLocations } from '@/lib/favorites';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 import { LOCATION_SLUGS } from '@/lib/locationSlugs';
 
+type LocationKey = keyof typeof LOCATION_CONFIG;
+
 const ProfilePage = async () => {
-  const [session, favoriteLocations] = await Promise.all([
+  const [session, rawFavoriteLocations] = await Promise.all([
     auth(),
     getCurrentUserFavoriteLocations(),
   ]);
+
+  const favoriteLocations = rawFavoriteLocations as LocationKey[];
+
   const email = session?.user?.email ?? 'Not logged in';
   const isLoggedIn = Boolean(session?.user?.email);
 
@@ -104,7 +109,7 @@ const ProfilePage = async () => {
 
           {isLoggedIn && favoriteLocations.length > 0 ? (
             <Row className="g-3">
-              {favoriteLocations.map((location) => {
+              {favoriteLocations.map((location: LocationKey) => {
                 const config = LOCATION_CONFIG[location];
 
                 return (

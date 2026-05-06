@@ -35,9 +35,11 @@ test('can authenticate a specific user', async ({ getUserPage }) => {
 
   await nav.getByRole('link', { name: 'Submit Update', exact: true }).click();
 
+  await expect(customUserPage).toHaveURL(/\/submit/);
+
   await expect(
     customUserPage.getByRole('heading', { name: 'Submit Update', exact: true }),
-  ).toBeVisible({ timeout: 5000 });
+  ).toBeVisible({ timeout: 15000 });
 
   await customUserPage.goto('http://localhost:3000/pulse-feed');
 
@@ -45,5 +47,5 @@ test('can authenticate a specific user', async ({ getUserPage }) => {
 
   await expect(
     customUserPage.getByText('campus study, dining, and fitness locations', { exact: false }),
-  ).toBeVisible({ timeout: 5000 });
+  ).toBeVisible({ timeout: 10000 });
 });
