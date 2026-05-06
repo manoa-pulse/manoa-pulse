@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect, useSearchParams } from 'next/navigation';
 import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
@@ -11,6 +11,7 @@ import * as Yup from 'yup';
 import { submitUpdate } from '@/lib/dbActions';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { UpdateStuffSchema } from '@/lib/validationSchemas';
+import { getClientLocationHoursStatus } from '@/lib/clientLocationHours';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 
 type SubmitUpdateData = Yup.InferType<typeof UpdateStuffSchema>;
@@ -20,26 +21,46 @@ const isValidLocationKey = (value: string | null): value is LocationKey => (
   value !== null && value in LOCATION_CONFIG
 );
 
-const getDefaultLocation = (locationParam: string | null): LocationKey => {
-  if (isValidLocationKey(locationParam)) {
+const getDefaultLocation = (
+  locationParam: string | null,
+  openLocations: LocationKey[],
+): LocationKey => {
+  if (isValidLocationKey(locationParam) && openLocations.includes(locationParam)) {
     return locationParam;
   }
 
-  return 'HamiltonLibrary';
+  return openLocations[0] ?? 'HamiltonLibrary';
 };
 
 const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
-  await submitUpdate(data);
+  try {
+    await submitUpdate(data);
 
-  swal('Success', 'Your update has been submitted', 'success', {
-    timer: 2000,
-  });
+    swal('Success', 'Your update has been submitted', 'success', {
+      timer: 2000,
+    });
+  } catch (error) {
+    const message = error instanceof Error
+      ? error.message
+      : 'Unable to submit your update. Please try again.';
+
+    swal('Unable to submit', message, 'error');
+  }
 };
 
 const SubmitUpdateForm: React.FC = () => {
   const { status } = useSession();
   const searchParams = useSearchParams();
-  const defaultLocation = getDefaultLocation(searchParams.get('location'));
+  const openLocations = useMemo(
+    () => (
+      Object.keys(LOCATION_CONFIG).filter((location) => (
+        getClientLocationHoursStatus(location as LocationKey).isOpen
+      )) as LocationKey[]
+    ),
+    [],
+  );
+  const defaultLocation = getDefaultLocation(searchParams.get('location'), openLocations);
+  const hasOpenLocations = openLocations.length > 0;
 
   const [busyLevelValue, setBusyLevelValue] = useState(1);
   const [selectedLocation, setSelectedLocation] = useState<LocationKey>(defaultLocation);
@@ -67,6 +88,7 @@ const SubmitUpdateForm: React.FC = () => {
   }
 
   const selectedLocationConfig = LOCATION_CONFIG[selectedLocation];
+  const selectedLocationHoursStatus = getClientLocationHoursStatus(selectedLocation);
 
   const locationRegister = register('location', {
     onChange: (event) => {
@@ -108,9 +130,9 @@ const SubmitUpdateForm: React.FC = () => {
                     {...locationRegister}
                     className={`form-control ${errors.location ? 'is-invalid' : ''}`}
                   >
-                    {Object.entries(LOCATION_CONFIG).map(([key, value]) => (
+                    {openLocations.map((key) => (
                       <option key={key} value={key}>
-                        {value.label}
+                        {LOCATION_CONFIG[key].label}
                       </option>
                     ))}
                   </select>
@@ -124,6 +146,21 @@ const SubmitUpdateForm: React.FC = () => {
                     <p className="mb-2">
                       <strong>Category:</strong> {selectedLocationConfig.category}
                     </p>
+                    <p
+                      className={`fw-semibold mb-2 ${
+                        selectedLocationHoursStatus.isOpen ? 'text-success' : 'text-danger'
+                      }`}
+                    >
+                      {selectedLocationHoursStatus.statusText}
+                    </p>
+                    <p className="text-muted mb-3">
+                      Today: {selectedLocationHoursStatus.todayHoursText}
+                    </p>
+                    {!hasOpenLocations && (
+                      <p className="text-danger fw-semibold mb-3">
+                        No locations are open for updates right now.
+                      </p>
+                    )}
 
                     <div>
                       <strong>Busyness Scale:</strong>
@@ -172,9 +209,18 @@ const SubmitUpdateForm: React.FC = () => {
                 <Form.Group className="form-group">
                   <Row className="pt-3">
                     <Col>
-                      <Button type="submit" variant="success">
+                      <Button
+                        type="submit"
+                        variant="success"
+                        disabled={!hasOpenLocations}
+                      >
                         Submit
                       </Button>
+                      {!hasOpenLocations && (
+                        <div className="text-danger small fw-semibold mt-2">
+                          Updates are closed right now.
+                        </div>
+                      )}
                     </Col>
                     <Col>
                       <Button

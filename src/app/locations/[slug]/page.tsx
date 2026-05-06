@@ -244,14 +244,24 @@ const LocationDetailPage = async ({
                   </p>
                 </div>
 
-                <Link href={`/submit?location=${locationKey}`} className="text-decoration-none">
+                {isAfterHours ? (
                   <Button
                     variant="light"
                     className="w-100 rounded-pill fw-bold py-3"
+                    disabled
                   >
-                    Submit a Pulse Update →
+                    Submit a Pulse Update
                   </Button>
-                </Link>
+                ) : (
+                  <Link href={`/submit?location=${locationKey}`} className="text-decoration-none">
+                    <Button
+                      variant="light"
+                      className="w-100 rounded-pill fw-bold py-3"
+                    >
+                      Submit a Pulse Update →
+                    </Button>
+                  </Link>
+                )}
               </div>
             </Card>
           </Col>
