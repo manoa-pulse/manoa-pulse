@@ -1,6 +1,10 @@
 import Link from 'next/link';
+import { EntryLocation } from '@prisma/client';
 import { notFound } from 'next/navigation';
 import { Button, Card, Col, Container, Row } from 'react-bootstrap';
+import FavoritePlaceButton from '@/components/FavoritePlaceButton';
+import { auth } from '@/lib/auth';
+import { getCurrentUserFavoriteLocationSet } from '@/lib/favorites';
 import { getHourlyPulseData, getPulseData } from '@/lib/getPulseData';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 import { SLUG_TO_LOCATION } from '@/lib/locationSlugs';
@@ -70,9 +74,11 @@ const LocationDetailPage = async ({
     notFound();
   }
 
-  const [pulseData, hourlyPulseData] = await Promise.all([
+  const [pulseData, hourlyPulseData, favoriteLocations, session] = await Promise.all([
     getPulseData(),
     getHourlyPulseData(),
+    getCurrentUserFavoriteLocationSet(),
+    auth(),
   ]);
 
   const locationPulse = pulseData.find((item) => item.location === locationKey);
@@ -84,6 +90,8 @@ const LocationDetailPage = async ({
   const statusColor = getStatusColor(occupancy);
   const dataSourceInfo = getDataSourceLabel(locationPulse?.dataSource);
   const isAfterHours = locationPulse?.dataSource === 'AFTER_HOURS';
+  const isLoggedIn = Boolean(session?.user?.email);
+  const isFavorite = favoriteLocations.has(locationKey as EntryLocation);
 
   return (
     <main className="bg-light py-4">
@@ -128,6 +136,15 @@ const LocationDetailPage = async ({
                   {locationPulse.hoursStatus} • Today: {locationPulse.todayHours}
                 </p>
               )}
+
+              <div className="mt-4">
+                <FavoritePlaceButton
+                  isFavorited={isFavorite}
+                  isLoggedIn={isLoggedIn}
+                  location={locationKey}
+                  size="lg"
+                />
+              </div>
             </Col>
 
             <Col md={5} className="text-center">

@@ -7,10 +7,11 @@ datasource db {
 }
 
 model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  role     Role   @default(USER)
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  role           Role            @default(USER)
+  favoritePlaces FavoritePlace[]
 }
 
 model Stuff {
@@ -28,6 +29,17 @@ model Entry {
   location    EntryLocation @default(HamiltonLibrary)
   createdAt   DateTime      @default(now())
   submittedBy String        @default("Unknown")
+}
+
+model FavoritePlace {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  location  EntryLocation
+  createdAt DateTime      @default(now())
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, location])
+  @@index([location])
 }
 
 enum Role {

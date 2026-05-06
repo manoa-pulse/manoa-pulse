@@ -65,6 +65,98 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
 }
 
 /**
+ * Toggles the current user's favorite state for a campus location.
+ */
+export async function toggleFavoritePlace(formData: FormData) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    throw new Error('You must be logged in to bookmark a place.');
+  }
+
+  const locationValue = formData.get('location');
+
+  if (typeof locationValue !== 'string') {
+    throw new Error('Invalid location.');
+  }
+
+  const validLocations = Object.values(EntryLocation);
+
+  if (!validLocations.includes(locationValue as EntryLocation)) {
+    throw new Error(`Invalid location: ${locationValue}`);
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email: session.user.email,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User account not found.');
+  }
+
+  const location = locationValue as EntryLocation;
+  const favoritedValue = formData.get('favorited');
+
+  if (favoritedValue === 'true') {
+    await prisma.favoritePlace.upsert({
+      where: {
+        userId_location: {
+          userId: user.id,
+          location,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        location,
+      },
+    });
+
+    return;
+  }
+
+  if (favoritedValue === 'false') {
+    await prisma.favoritePlace.deleteMany({
+      where: {
+        userId: user.id,
+        location,
+      },
+    });
+
+    return;
+  }
+
+  const existingFavorite = await prisma.favoritePlace.findUnique({
+    where: {
+      userId_location: {
+        userId: user.id,
+        location,
+      },
+    },
+  });
+
+  if (existingFavorite) {
+    await prisma.favoritePlace.delete({
+      where: {
+        id: existingFavorite.id,
+      },
+    });
+  } else {
+    await prisma.favoritePlace.create({
+      data: {
+        userId: user.id,
+        location,
+      },
+    });
+  }
+}
+
+/**
  * Deletes a pulse submission from the admin page.
  */
 export async function deletePulseSubmission(formData: FormData) {
