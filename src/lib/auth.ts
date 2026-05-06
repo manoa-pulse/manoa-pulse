@@ -4,6 +4,15 @@ import Credentials from 'next-auth/providers/credentials';
 import { prisma } from './prisma';
 import bcrypt from 'bcrypt';
 
+const formatUserName = (firstName?: string | null, lastName?: string | null) => {
+  const fullName = [firstName, lastName]
+    .map((name) => name?.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return fullName || null;
+};
+
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -13,7 +22,13 @@ declare module 'next-auth' {
 }
 
 // Export v5 handlers and helpers
-export const { auth, signIn, signOut, handlers } = NextAuth({
+export const {
+  auth,
+  signIn,
+  signOut,
+  handlers,
+  unstable_update: updateSession,
+} = NextAuth({
   providers: [
     Credentials({
       credentials: {
@@ -37,7 +52,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         return {
           id: user.id.toString(),
           email: user.email,
-          name: user.email,
+          name: formatUserName(user.firstName, user.lastName) ?? user.email,
           role: user.role,
         };
       },
@@ -53,14 +68,21 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         ...session,
         user: {
           ...session.user,
+          email: typeof token.email === 'string' ? token.email : session.user.email,
+          name: typeof token.name === 'string' ? token.name : session.user.name,
           role: (token as { role?: string }).role,
         },
       };
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       // user is type: { id?: string; email?: string; name?: string; role?: string }
       if (user && typeof (user as { role?: string }).role === 'string') {
         token.role = (user as { role?: string }).role;
+      }
+      if (trigger === 'update' && session?.user) {
+        if (typeof session.user.name === 'string') {
+          token.name = session.user.name;
+        }
       }
       return token;
     },

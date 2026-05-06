@@ -4,8 +4,21 @@ import { Condition, EntryLocation, Role, Stuff } from '@prisma/client';
 import bcrypt, { hash } from 'bcrypt';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { auth } from './auth';
+import { auth, updateSession } from './auth';
 import { prisma } from './prisma';
+
+const PROFILE_IMAGE_MAX_BYTES = 1024 * 1024;
+const PROFILE_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const PROFILE_NAME_MAX_LENGTH = 50;
+
+const formatUserName = (firstName?: string | null, lastName?: string | null) => {
+  const fullName = [firstName, lastName]
+    .map((name) => name?.trim())
+    .filter(Boolean)
+    .join(' ');
+
+  return fullName || null;
+};
 
 const requireAdmin = async () => {
   const session = await auth();
@@ -154,6 +167,125 @@ export async function toggleFavoritePlace(formData: FormData) {
       },
     });
   }
+}
+
+/**
+ * Updates the current user's profile name from the profile page.
+ */
+export async function updateProfileName(formData: FormData) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    redirect('/auth/signin');
+  }
+
+  const firstNameValue = formData.get('firstName');
+  const lastNameValue = formData.get('lastName');
+
+  if (typeof firstNameValue !== 'string' || typeof lastNameValue !== 'string') {
+    redirect('/profile?profileError=invalid-name');
+  }
+
+  const firstName = firstNameValue.trim();
+  const lastName = lastNameValue.trim();
+
+  if (!firstName || !lastName) {
+    redirect('/profile?profileError=missing-name');
+  }
+
+  if (firstName.length > PROFILE_NAME_MAX_LENGTH || lastName.length > PROFILE_NAME_MAX_LENGTH) {
+    redirect('/profile?profileError=name-too-long');
+  }
+
+  const user = await prisma.user.update({
+    where: {
+      email: session.user.email,
+    },
+    data: {
+      firstName,
+      lastName,
+    },
+    select: {
+      email: true,
+      firstName: true,
+      lastName: true,
+    },
+  });
+
+  await updateSession({
+    user: {
+      name: formatUserName(user.firstName, user.lastName) ?? user.email,
+    },
+  });
+
+  revalidatePath('/profile');
+  redirect('/profile?profileUpdated=name');
+}
+
+/**
+ * Stores an uploaded profile image for the current user.
+ */
+export async function updateProfileImage(formData: FormData) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    redirect('/auth/signin');
+  }
+
+  const image = formData.get('profileImage');
+
+  if (!(image instanceof File) || image.size === 0) {
+    redirect('/profile?profileError=missing-image');
+  }
+
+  if (!PROFILE_IMAGE_TYPES.includes(image.type)) {
+    redirect('/profile?profileError=invalid-image-type');
+  }
+
+  if (image.size > PROFILE_IMAGE_MAX_BYTES) {
+    redirect('/profile?profileError=image-too-large');
+  }
+
+  const arrayBuffer = await image.arrayBuffer();
+  const base64Image = Buffer.from(arrayBuffer).toString('base64');
+  const profileImage = `data:${image.type};base64,${base64Image}`;
+
+  await prisma.user.update({
+    where: {
+      email: session.user.email,
+    },
+    data: {
+      profileImage,
+    },
+  });
+
+  revalidatePath('/profile');
+  redirect('/profile?profileUpdated=image');
+}
+
+/**
+ * Removes the current user's profile image.
+ */
+export async function removeProfileImage(formData: FormData) {
+  void formData;
+
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    redirect('/auth/signin');
+  }
+
+  await prisma.user.update({
+    where: {
+      email: session.user.email,
+    },
+    data: {
+      profileImage: null,
+    },
+  });
+
+  revalidatePath('/profile');
+  redirect('/profile?profileUpdated=image-removed');
 }
 
 /**
