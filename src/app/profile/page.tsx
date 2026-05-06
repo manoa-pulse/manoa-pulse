@@ -23,6 +23,8 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+type LocationKey = keyof typeof LOCATION_CONFIG;
+
 type ProfilePageProps = {
   searchParams: Promise<{
     profileError?: string;
@@ -64,7 +66,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
     redirect('/auth/signin');
   }
 
-  const [user, favoriteLocations] = await Promise.all([
+  const [user, rawFavoriteLocations] = await Promise.all([
     prisma.user.findUnique({
       where: {
         email: session.user.email,
@@ -78,6 +80,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
     }),
     getCurrentUserFavoriteLocations(),
   ]);
+  const favoriteLocations = rawFavoriteLocations as LocationKey[];
 
   if (!user) {
     redirect('/auth/signin');
@@ -282,7 +285,7 @@ const ProfilePage = async ({ searchParams }: ProfilePageProps) => {
 
           {favoriteLocations.length > 0 ? (
             <Row className="g-3">
-              {favoriteLocations.map((location) => {
+              {favoriteLocations.map((location: LocationKey) => {
                 const config = LOCATION_CONFIG[location];
 
                 return (

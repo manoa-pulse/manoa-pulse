@@ -50,31 +50,48 @@ export async function submitUpdate(entry: { location: string; busyLevel: number;
   const validLocations = Object.values(EntryLocation);
 
   if (!validLocations.includes(entry.location as EntryLocation)) {
-    throw new Error(`Invalid location: ${entry.location}`);
+    return {
+      success: false,
+      error: `Invalid location: ${entry.location}`,
+    };
   }
 
   if (entry.busyLevel < 1 || entry.busyLevel > 10) {
-    throw new Error('Busy level must be between 1 and 10');
+    return {
+      success: false,
+      error: 'Busy level must be between 1 and 10',
+    };
   }
 
   const location = entry.location as EntryLocation;
 
-  await prisma.entry.create({
-    data: {
-      location,
-      busyLevel: entry.busyLevel,
-      comment: entry.comment ?? '',
-      submittedBy: session?.user?.email ?? 'Unknown',
-    },
-  });
+  try {
+    await prisma.entry.create({
+      data: {
+        location,
+        busyLevel: entry.busyLevel,
+        comment: entry.comment ?? '',
+        submittedBy: session?.user?.email ?? 'Unknown',
+      },
+    });
 
-  revalidatePath('/pulse-feed');
-  revalidatePath('/map-view');
-  revalidatePath('/locations');
-  revalidatePath('/locations/[slug]', 'page');
-  revalidatePath('/admin');
+    revalidatePath('/pulse-feed');
+    revalidatePath('/map-view');
+    revalidatePath('/locations');
+    revalidatePath('/locations/[slug]', 'page');
+    revalidatePath('/admin');
 
-  redirect('/pulse-feed');
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      error: 'Unable to submit update.',
+    };
+  }
 }
 
 /**

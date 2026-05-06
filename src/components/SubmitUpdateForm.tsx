@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -32,25 +32,11 @@ const getDefaultLocation = (
   return openLocations[0] ?? 'HamiltonLibrary';
 };
 
-const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
-  try {
-    await submitUpdate(data);
-
-    swal('Success', 'Your update has been submitted', 'success', {
-      timer: 2000,
-    });
-  } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : 'Unable to submit your update. Please try again.';
-
-    swal('Unable to submit', message, 'error');
-  }
-};
-
 const SubmitUpdateForm: React.FC = () => {
+  const router = useRouter();
   const { status } = useSession();
   const searchParams = useSearchParams();
+
   const openLocations = useMemo(
     () => (
       Object.keys(LOCATION_CONFIG).filter((location) => (
@@ -59,6 +45,7 @@ const SubmitUpdateForm: React.FC = () => {
     ),
     [],
   );
+
   const defaultLocation = getDefaultLocation(searchParams.get('location'), openLocations);
   const hasOpenLocations = openLocations.length > 0;
 
@@ -79,12 +66,32 @@ const SubmitUpdateForm: React.FC = () => {
     },
   });
 
+  const onSubmit: SubmitHandler<SubmitUpdateData> = async (data) => {
+    try {
+      const result = await submitUpdate(data);
+
+      if (!result.success) {
+        swal('Unable to submit', result.error ?? 'Unable to submit your update. Please try again.', 'error');
+        return;
+      }
+
+      router.push('/pulse-feed');
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Unable to submit your update. Please try again.';
+
+      swal('Unable to submit', message, 'error');
+    }
+  };
+
   if (status === 'loading') {
     return <LoadingSpinner />;
   }
 
   if (status === 'unauthenticated') {
-    redirect('/auth/signin');
+    router.push('/auth/signin');
+    return <LoadingSpinner />;
   }
 
   const selectedLocationConfig = LOCATION_CONFIG[selectedLocation];
@@ -118,7 +125,7 @@ const SubmitUpdateForm: React.FC = () => {
       <Row className="justify-content-center">
         <Col xs={12} md={8} lg={6}>
           <Col className="text-center">
-            <h2 className='text-success'><b>Submit Update</b></h2>
+            <h2 className="text-success"><b>Submit Update</b></h2>
           </Col>
 
           <Card>
@@ -141,7 +148,7 @@ const SubmitUpdateForm: React.FC = () => {
 
                 <Card className="mb-3">
                   <Card.Body>
-                    <h5 style={{color : '#0b5d3b'}}>{selectedLocationConfig.label}</h5>
+                    <h5 style={{ color: '#0b5d3b' }}>{selectedLocationConfig.label}</h5>
                     <p className="text-muted mb-2">{selectedLocationConfig.description}</p>
                     <p className="mb-2">
                       <strong>Category:</strong> {selectedLocationConfig.category}
