@@ -1,11 +1,18 @@
 import Link from 'next/link';
 import { Col, Container, Row } from 'react-bootstrap';
+import FavoritePlaceButton from '@/components/FavoritePlaceButton';
 import { auth } from '@/lib/auth';
+import { getCurrentUserFavoriteLocations } from '@/lib/favorites';
+import { LOCATION_CONFIG } from '@/lib/locationConfig';
+import { LOCATION_SLUGS } from '@/lib/locationSlugs';
 
 const ProfilePage = async () => {
-  const session = await auth();
+  const [session, favoriteLocations] = await Promise.all([
+    auth(),
+    getCurrentUserFavoriteLocations(),
+  ]);
   const email = session?.user?.email ?? 'Not logged in';
-  const isLoggedIn = session?.user?.email;
+  const isLoggedIn = Boolean(session?.user?.email);
 
   return (
     <main
@@ -82,15 +89,60 @@ const ProfilePage = async () => {
         </Row>
 
         <div className="bg-white shadow-sm p-4 p-md-5 mt-4" style={{ borderRadius: '1.5rem' }}>
-          <Row className="align-items-center g-4">
-            <Col lg={12}>
-              <h2 className="fw-bold mb-2">Note</h2>
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div>
+              <h2 className="fw-bold mb-2">Favorite Places</h2>
               <p className="text-secondary mb-0">
-                This page shows minimal account information. It only uses the current
-                session email and login state.
+                Bookmarked campus spots for quicker check-ins.
               </p>
-            </Col>
-          </Row>
+            </div>
+
+            <Link href="/locations" className="btn btn-success rounded-pill fw-semibold px-4">
+              Browse Locations
+            </Link>
+          </div>
+
+          {isLoggedIn && favoriteLocations.length > 0 ? (
+            <Row className="g-3">
+              {favoriteLocations.map((location) => {
+                const config = LOCATION_CONFIG[location];
+
+                return (
+                  <Col md={6} xl={4} key={location}>
+                    <div className="border bg-light p-4 h-100" style={{ borderRadius: '1rem' }}>
+                      <p className="text-uppercase text-muted fw-semibold small mb-2">
+                        {config.category}
+                      </p>
+                      <h3 className="fw-bold h5 mb-2">{config.label}</h3>
+                      <p className="text-secondary mb-4">{config.description}</p>
+                      <div className="d-flex flex-wrap gap-2">
+                        <Link
+                          href={`/locations/${LOCATION_SLUGS[location]}`}
+                          className="btn btn-light border rounded-pill fw-semibold"
+                        >
+                          View Details
+                        </Link>
+                        <FavoritePlaceButton
+                          isFavorited
+                          isLoggedIn={isLoggedIn}
+                          location={location}
+                          size="sm"
+                        />
+                      </div>
+                    </div>
+                  </Col>
+                );
+              })}
+            </Row>
+          ) : (
+            <div className="bg-light rounded-4 p-4">
+              <p className="text-secondary mb-0">
+                {isLoggedIn
+                  ? 'No favorite places yet. Bookmark locations you check often.'
+                  : 'Sign in to save favorite places to your account.'}
+              </p>
+            </div>
+          )}
         </div>
       </Container>
     </main>

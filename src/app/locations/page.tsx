@@ -1,6 +1,10 @@
 import Link from 'next/link';
+import { EntryLocation } from '@prisma/client';
 import { Card, Col, Container, ProgressBar, Row } from 'react-bootstrap';
 import { ArrowRight, ClockHistory, GeoAltFill, PeopleFill } from 'react-bootstrap-icons';
+import FavoritePlaceButton from '@/components/FavoritePlaceButton';
+import { auth } from '@/lib/auth';
+import { getCurrentUserFavoriteLocationSet } from '@/lib/favorites';
 import {
   formatHourLabel,
   getCurrentHistoricalHour,
@@ -82,10 +86,13 @@ const LocationsPage = async () => {
   const currentHour = getCurrentHistoricalHour();
   const currentHourLabel = formatHourLabel(currentHour);
 
-  const [hourlyPulseData, pulseData] = await Promise.all([
+  const [hourlyPulseData, pulseData, favoriteLocations, session] = await Promise.all([
     getHourlyPulseData(),
     getPulseData(),
+    getCurrentUserFavoriteLocationSet(),
+    auth(),
   ]);
+  const isLoggedIn = Boolean(session?.user?.email);
 
   const hourlyByLocation = new Map(
     hourlyPulseData.map((item) => [item.location, item.hours]),
@@ -106,6 +113,7 @@ const LocationsPage = async () => {
     return {
       key: locationKey as LocationKey,
       config,
+      isFavorite: favoriteLocations.has(locationKey as EntryLocation),
       averageBusyLevel: isAfterHours ? null : currentHourAverage?.busyLevel ?? null,
       occupancy: isAfterHours ? null : currentHourAverage?.occupancy ?? null,
       samples: isAfterHours ? 0 : currentHourAverage?.samples ?? 0,
@@ -116,6 +124,8 @@ const LocationsPage = async () => {
       todayHours: pulse?.todayHours ?? 'Hours unavailable',
     };
   });
+
+  locations.sort((first, second) => Number(second.isFavorite) - Number(first.isFavorite));
 
   const locationsWithData = locations.filter(
     (location) => location.occupancy !== null && location.samples > 0,
@@ -226,14 +236,23 @@ const LocationsPage = async () => {
                         </div>
                       </div>
 
-                      <div
-                        className="px-3 py-2 fw-semibold"
-                        style={{
-                          ...statusStyle,
-                          borderRadius: '999px',
-                        }}
-                      >
-                        {status}
+                      <div className="d-flex flex-column align-items-end gap-2">
+                        <div
+                          className="px-3 py-2 fw-semibold"
+                          style={{
+                            ...statusStyle,
+                            borderRadius: '999px',
+                          }}
+                        >
+                          {status}
+                        </div>
+
+                        <FavoritePlaceButton
+                          isFavorited={location.isFavorite}
+                          isLoggedIn={isLoggedIn}
+                          location={location.key}
+                          size="sm"
+                        />
                       </div>
                     </div>
 
