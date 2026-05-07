@@ -4,6 +4,7 @@ import { Button, Card, Col, Container, Row } from 'react-bootstrap';
 import { getHourlyPulseData, getPulseData } from '@/lib/getPulseData';
 import { LOCATION_CONFIG } from '@/lib/locationConfig';
 import { SLUG_TO_LOCATION } from '@/lib/locationSlugs';
+import CommentSection from '@/components/CommentSection';
 
 type DataSource = 'LIVE' | 'PREDICTED' | 'NO_DATA' | 'AFTER_HOURS';
 
@@ -210,6 +211,8 @@ const LocationDetailPage = async ({
               </div>
             </Card>
           </Col>
+
+          <CommentSection location={locationKey} />
 
           <Col lg={4}>
             <Card

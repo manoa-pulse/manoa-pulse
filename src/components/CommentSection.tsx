@@ -10,9 +10,9 @@ interface CommentSectionProps {
  * @returns The component
  */
 export default async function CommentSection({location} : CommentSectionProps) {
-    const entries = await (await prisma.entry.findMany()).filter((element)=>(element.comment != "") && (element.location == location));
+    const entries = await (await prisma.entry.findMany({orderBy: {createdAt: "desc",}, take: 10})).filter((element)=>(element.comment != "") && (element.location == location));
     return (<>
-        <Row>
+        <Row className='p-4'>
             <Col lg={3} className='mb-4'>
             <div
               className="bg-white shadow-sm h-100 d-flex flex-column justify-content-between p-4"
