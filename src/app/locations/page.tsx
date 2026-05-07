@@ -293,6 +293,10 @@ const LocationsPage = async () => {
           })}
         </Row>
 
+        <Row className='g-4'>
+          
+        </Row>
+
         <div className="text-center mt-5 pt-2">
           <Link
             href="/"
